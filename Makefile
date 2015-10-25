@@ -1,7 +1,7 @@
 EMACS ?= emacs
 CASK ?= cask
 
-include makefile-local
+-include makefile-local
 
 export EMACS
 
