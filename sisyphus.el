@@ -84,6 +84,15 @@
 ;; *** String Comparision
 
 ;; #+begin_src emacs-lisp
+(defun sisyphus--write-file-silently (filename)
+  "Write current buffer into FILENAME.
+Unlike most other ways of saving a file, this should not
+print any messages!."
+  (write-region
+   (point-min) (point-max)
+   filename nil
+   'dont-display-wrote-file-message))
+
 (defun sisyphus--explainer-diff-string= (a b)
   "Compare strings using diff output."
   (let* ((diff
@@ -101,11 +110,11 @@
     (with-current-buffer
         a-buffer
       (insert a)
-      (write-file a-file))
+      (sisyphus--write-file-silently a-file))
     (with-current-buffer
         b-buffer
       (insert b)
-      (write-file b-file))
+      (sisyphus--write-file-silently b-file))
     (prog1
         (format "Strings:\n%s\nand\n%s\nDiffer at:%s\n"
                 a b
