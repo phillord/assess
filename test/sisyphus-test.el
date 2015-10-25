@@ -18,14 +18,14 @@
 (require 'sisyphus)
 (require 'cl-lib)
 
-(defun sisyphus-test--plist-from-test (result)
+(defun sisyphus-test--plist-from-result (result)
   (cl-cdadr
    (ert-test-result-with-condition-condition result)))
 
 (ert-deftest plist-extraction ()
   (should
    (equal
-    (sisyphus-test--plist-from-test
+    (sisyphus-test--plist-from-result
      (ert-run-test
       (make-ert-test
        :body
@@ -34,16 +34,16 @@
           (eq 1 2))))))
     '(:form (eq 1 2) :value nil))))
 
-(defun sisyphus-test--explanation-from-test (result)
+(defun sisyphus-test--explanation-from-result (result)
   (plist-get
-   (sisyphus-test--plist-from-test result)
+   (sisyphus-test--plist-from-result result)
    :explanation))
 
-(ert-deftest explanation-extraction ()
+(ert-deftest explanation-extraction-from-result ()
   "Test that explanation is extractable from failing test.
 This also tests the advice on string=."
   (should
-   (sisyphus-test--explanation-from-test
+   (sisyphus-test--explanation-from-result
     (ert-run-test
      (make-ert-test
       :body
@@ -57,3 +57,41 @@ This also tests the advice on string=."
    (string= "1" "1"))
   (should-not
    (string= "1" "2")))
+
+(defun sisyphus-test--explanation (f)
+  (sisyphus-test--explanation-from-result
+   (ert-run-test
+    (make-ert-test
+     :body f))))
+
+(ert-deftest explanation-extraction ()
+  "Test that explanation is extractable from failing test.
+This also tests the advice on string=."
+  (should
+   (sisyphus-test--explanation
+    (lambda ()
+      (should
+       (string= "1" "2"))))))
+
+(ert-deftest buffer-string= ()
+  (with-temp-buffer
+    (insert "hello")
+    (should
+     (sisyphus-buffer-string=
+      (current-buffer)
+      "hello")))
+  (with-temp-buffer
+    (insert "goodbye")
+    (should-not
+     (sisyphus-buffer-string=
+      (current-buffer)
+      "hello")))
+  (should
+   (sisyphus-test--explanation
+    (lambda ()
+      (with-temp-buffer
+        (insert "goodbye")
+        (should
+         (sisyphus-buffer-string=
+          (current-buffer)
+          "hello")))))))

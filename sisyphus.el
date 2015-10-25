@@ -47,6 +47,7 @@
 ;; #+begin_src emacs-lisp
 (require 'pp)
 (require 'ert)
+(require 'm-buffer-at)
 ;; #+end_src
 
 ;; ** Advice
@@ -156,14 +157,25 @@ print any messages!."
 ;; #+begin_src emacs-lisp
 (defun sisyphus-buffer-string= (buffer string)
   (string=
-   (m-buffer-at-substring buffer)
+   (m-buffer-at-string buffer)
    string))
+
+(defun sisyphus-explain-buffer-string= (buffer string)
+  (sisyphus-explain-string=
+   (m-buffer-at-string buffer)
+   string))
+
+(put 'sisyphus-buffer-string=
+     'ert-explainer
+     'sisyphus-explain-buffer-string=)
 
 ;; #+end_src
 
-;; Compare string to buffer
 
 ;; Compare buffer to buffer
+;; #+begin_src emacs-lisp
+
+;; #+end_src
 
 ;; Compare string to file
 
