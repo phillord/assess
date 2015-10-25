@@ -8,7 +8,6 @@ export EMACS
 all: install test
 
 install:
-	echo EMACS is $(EMACS)
 	cask install
 
 just-test:
