@@ -16,9 +16,10 @@
 ;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 (require 'sisyphus)
+(require 'cl-lib)
 
 (defun sisyphus-test--plist-from-test (result)
-  (cdadr
+  (cl-cdadr
    (ert-test-result-with-condition-condition result)))
 
 (ert-deftest plist-extraction ()
