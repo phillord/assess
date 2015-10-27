@@ -88,7 +88,7 @@
 (defun sisyphus--write-file-silently (filename)
   "Write current buffer into FILENAME.
 Unlike most other ways of saving a file, this should not
-print any messages!."
+print any messages!"
   (write-region
    (point-min) (point-max)
    filename nil
@@ -168,7 +168,6 @@ print any messages!."
 (put 'sisyphus-buffer-string=
      'ert-explainer
      'sisyphus-explain-buffer-string=)
-
 ;; #+end_src
 
 
