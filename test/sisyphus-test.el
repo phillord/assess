@@ -15,6 +15,7 @@
 ;; You should have received a copy of the GNU General Public License
 ;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+(require 'load-relative)
 (require 'sisyphus)
 (require 'cl-lib)
 
@@ -95,3 +96,59 @@ This also tests the advice on string=."
          (sisyphus-buffer-string=
           (current-buffer)
           "hello")))))))
+
+(ert-deftest buffer= ()
+  (let (a)
+    (with-temp-buffer
+      (setq a (current-buffer))
+      (insert "hello")
+      (with-temp-buffer
+        (insert "hello")
+        (should
+         (sisyphus-buffer=
+          (current-buffer)
+          a)))))
+  (let (a)
+    (with-temp-buffer
+      (setq a (current-buffer))
+      (insert "hello")
+      (with-temp-buffer
+        (insert "goodbye")
+        (should-not
+         (sisyphus-buffer=
+          (current-buffer)
+          a)))))
+  (should
+   (let (a b)
+     (with-temp-buffer
+       (setq a (current-buffer))
+       (insert "hello")
+       (with-temp-buffer
+         (setq b (current-buffer))
+         (insert "goodbye")
+         (sisyphus-test--explanation
+          (lambda ()
+            (should
+             (sisyphus-buffer=
+              a b)))))))))
+
+(defvar sisyphus-test-hello.txt
+  (relative-expand-file-name "../dev-resources/hello.txt"))
+
+
+(ert-deftest file-string= ()
+  (should
+   (sisyphus-file-string=
+    sisyphus-test-hello.txt
+    "hello\n"))
+  (should-not
+   (sisyphus-file-string=
+    sisyphus-test-hello.txt
+    "goodbye"))
+  (should
+   (sisyphus-test--explanation
+    (lambda ()
+      (should
+       (sisyphus-file-string=
+        sisyphus-test-hello.txt
+        "goodbye"))))))

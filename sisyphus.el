@@ -173,16 +173,46 @@ print any messages!"
 
 ;; Compare buffer to buffer
 ;; #+begin_src emacs-lisp
+(defun sisyphus-buffer= (a b)
+  (string=
+   (m-buffer-at-string a)
+   (m-buffer-at-string b)))
 
+(defun sisyphus-explain-buffer= (a b)
+  (sisyphus-explain-string=
+   (m-buffer-at-string a)
+   (m-buffer-at-string b)))
+
+(put 'sisyphus-buffer=
+     'ert-explainer
+     'sisyphus-explain-buffer=)
 ;; #+end_src
 
 ;; Compare string to file
+(defun sisyphus-file-string= (file string)
+  (string=
+   (with-temp-buffer
+     (insert-file-contents file)
+     (buffer-string))
+   string))
+
+(defun sisyphus-explain-file-string= (file string)
+  (sisyphus-explain-string=
+   (with-temp-buffer
+     (insert-file-contents file)
+     (buffer-string))
+   string))
+
+(put 'sisyphus-file-string=
+     'ert-explainer
+     'sisyphus-explain-file-string=)
 
 ;; Compare buffer to file
 
 ;; Compare file to file.
 
 ;; ** Create buffers
+
 
 ;; Need to think carefully about this, but would like to create buffers. Temp
 ;; buffers are generally a good option but what if we have a named buffer, but
