@@ -172,3 +172,8 @@ This also tests the advice on string=."
          (signal 'deliberate-error nil))
       (deliberate-error
        (length (buffer-list)))))))
+
+(ert-deftest with-temp-buffers ()
+  (should
+   (bufferp
+    (sisyphus-with-temp-buffers (a) a))))

@@ -238,8 +238,21 @@ print any messages!"
         (-difference (buffer-list)
                      before-buffer-list)))))
 
+(defmacro sisyphus-with-temp-buffers (varlist &rest body)
+  "Bind variables in VARLIST to temp buffers, then eval BODY.
 
-
+VARLIST is a list of symbols. Each is bound to a buffer generated
+with `generate-new-buffer'. Buffers are unconditionally killed at
+the end of the form."
+  (declare (indent 1)
+           (debug (sexp body)))
+  (let ((let-form
+         (--map
+          `(,it (generate-new-buffer "sisyphus-with-temp-buffers"))
+          varlist)))
+    `(sisyphus-with-preserved-buffer-list
+      (let ,let-form
+        ,@body))))
 
 ;; ** Open files
 
