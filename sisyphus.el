@@ -239,17 +239,29 @@ print any messages!"
         (-difference (buffer-list)
                      before-buffer-list)))))
 
+(defun sisyphus--temp-buffer-let-form (item)
+  (if (not (listp item))
+      (sisyphus--temp-buffer-let-form
+       (list item))
+    `(,(car item)
+      (with-current-buffer
+          (generate-new-buffer "sisyphus-with-temp-buffers")
+        ,@(cdr item)
+        (current-buffer)))))
+
 (defmacro sisyphus-with-temp-buffers (varlist &rest body)
   "Bind variables in VARLIST to temp buffers, then eval BODY.
 
-VARLIST is a list of symbols. Each is bound to a buffer generated
-with `generate-new-buffer'. Buffers are unconditionally killed at
-the end of the form."
+VARLIST is of the same form as a `let' binding. Each element is a
+symbol or a list (SYMBOL VALUEFORMS). Each symbol is bound to a
+buffer generated with `generate-new-buffer'. VALUEFORMS are
+evaluated with the buffer current. Buffers are unconditionally
+killed at the end of the form."
   (declare (indent 1)
-           (debug (sexp body)))
+           (debug let))
   (let ((let-form
-         (--map
-          `(,it (generate-new-buffer "sisyphus-with-temp-buffers"))
+         (-map
+          #'sisyphus--temp-buffer-let-form
           varlist)))
     `(sisyphus-with-preserved-buffer-list
       (let ,let-form

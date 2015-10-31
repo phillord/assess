@@ -176,4 +176,28 @@ This also tests the advice on string=."
 (ert-deftest with-temp-buffers ()
   (should
    (bufferp
-    (sisyphus-with-temp-buffers (a) a))))
+    (sisyphus-with-temp-buffers (a) a)))
+  (should
+   (bufferp
+    (sisyphus-with-temp-buffers
+        (a (insert "hello"))
+      a)))
+  (should
+   (equal
+    "hello"
+    (sisyphus-with-temp-buffers
+        ((a (insert "hello")))
+      (with-current-buffer
+          a
+        (buffer-string)))))
+  (should
+   (=
+    (+ 2 (length (buffer-list)))
+    (sisyphus-with-temp-buffers (a b)
+      (length (buffer-list)))))
+  (should
+   (=
+    (length (buffer-list))
+    (progn
+      (sisyphus-with-temp-buffers (a b))
+      (length (buffer-list))))))
