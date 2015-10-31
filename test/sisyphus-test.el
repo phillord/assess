@@ -152,3 +152,23 @@ This also tests the advice on string=."
        (sisyphus-file-string=
         sisyphus-test-hello.txt
         "goodbye"))))))
+
+
+(ert-deftest preserved-buffer-list ()
+  (should
+   (=
+    (length (buffer-list))
+    (progn
+      (sisyphus-with-preserved-buffer-list
+       (generate-new-buffer "preserved-buffer-list"))
+      (length (buffer-list)))))
+
+  (should
+   (=
+    (length (buffer-list))
+    (condition-case e
+        (sisyphus-with-preserved-buffer-list
+         (generate-new-buffer "preserved-buffer-list")
+         (signal 'deliberate-error nil))
+      (deliberate-error
+       (length (buffer-list)))))))

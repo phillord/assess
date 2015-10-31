@@ -35,7 +35,7 @@
 
 ;; Really, all the functions in here should be tested. But some of the tests are
 ;; really, realy hard to test because they depend on the output of ert test,
-;; wh
+
 
 
 
@@ -48,7 +48,15 @@
 (require 'pp)
 (require 'ert)
 (require 'm-buffer-at)
+(require 'dash)
 ;; #+end_src
+
+;; #+begin_src emacs-lisp
+(define-error 'deliberate-error
+  "An error deliberately caused during testing."
+  'error)
+;; #+end_src
+
 
 ;; ** Advice
 
@@ -81,6 +89,9 @@
 ;; pp has a variable pp-escape-newlines which set to nil solves the problem.
 
 ;; How do do this cleanly? Apply patch to ert.el?
+
+
+
 
 ;; *** String Comparision
 
@@ -214,11 +225,21 @@ print any messages!"
 ;; ** Create buffers
 
 
-;; Need to think carefully about this, but would like to create buffers. Temp
-;; buffers are generally a good option but what if we have a named buffer, but
-;; the named buffer is already open. What happens if a test creates a buffer? Can
-;; we detect the buffer creation and close them again?
-;; "with-protected-buffer-list" perhaps, or "save-buffer-list-excursion".
+
+(defmacro sisyphus-with-preserved-buffer-list (&rest body)
+  "Evaluate BODY, but delete any buffers that have been created."
+  `(let ((before-buffer-list
+          (buffer-list)))
+     (unwind-protect
+         (progn
+           ,@body)
+       (--map
+        (kill-buffer it)
+        (-difference (buffer-list)
+                     before-buffer-list)))))
+
+
+
 
 ;; ** Open files
 
