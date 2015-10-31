@@ -228,6 +228,7 @@ print any messages!"
 
 (defmacro sisyphus-with-preserved-buffer-list (&rest body)
   "Evaluate BODY, but delete any buffers that have been created."
+  (declare (debug t))
   `(let ((before-buffer-list
           (buffer-list)))
      (unwind-protect
