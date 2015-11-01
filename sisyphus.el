@@ -62,14 +62,16 @@
 
 
 ;; #+begin_src emacs-lisp
-(defun sisyphus--ert-pp-with-indentation-and-newline (orig object)
-  (let ((pp-escape-newlines nil))
-    (funcall orig object)))
+(when (= emacs-major-version 24)
 
-(advice-add
- 'ert--pp-with-indentation-and-newline
- :around
- #'sisyphus--ert-pp-with-indentation-and-newline)
+  (defun sisyphus--ert-pp-with-indentation-and-newline (orig object)
+    (let ((pp-escape-newlines nil))
+      (funcall orig object)))
+
+  (advice-add
+   'ert--pp-with-indentation-and-newline
+   :around
+   #'sisyphus--ert-pp-with-indentation-and-newline))
 ;; #+end_src
 
 
@@ -91,7 +93,24 @@
 ;; How do do this cleanly? Apply patch to ert.el?
 
 
+;; #+begin_src emacs-lisp
+(defun sisyphus-to-string (x)
+  "Turn X into a string in a type appropriate way."
+  (pcase x
+   ((pred stringp) x)
+   ((pred bufferp) (m-buffer-at-string x))
+   (`(:buffer ,b) (sisyphus-to-string (get-buffer-create b)))
+   (`(:file ,f)
+    (with-temp-buffer
+      (insert-file-contents f)
+      (buffer-string)))
+   ;; error condition
+   (_ (error "Type not recognised"))))
 
+(defun sisyphus-file (f)
+  "Add type data to F marking it as a file."
+  `(:file ,f))
+;; #+end_src
 
 ;; *** String Comparision
 
@@ -150,79 +169,35 @@ print any messages!"
   ;; We could do a bit more here.
   (format "String :%s:%s: are not equal."))
 
-(defun sisyphus-explain-string= (a b)
-  "Compare strings and return an explanation."
-  (cond
-   ((string= a b)
-    t)
-   ((executable-find "diff")
-    (sisyphus--explainer-diff-string= a b))
-   (t
-    (sisyphus--explainer-simple-string= a b))))
+(defun sisyphus= (a b)
+  "Compare A and B to see if they are the same.
 
-(put 'string= 'ert-explainer 'sisyphus-explain-string=)
-;; #+end_src
-
-;;; *** String to buffer
-
-;; #+begin_src emacs-lisp
-(defun sisyphus-buffer-string= (buffer string)
+Equality in this sense means compare the contents in a way which
+is appropriate for the type of the two arguments. So, if they are
+strings, the compare strings, if buffers, then compare the buffer
+contents and so on."
   (string=
-   (m-buffer-at-string buffer)
-   string))
+   (sisyphus-to-string a)
+   (sisyphus-to-string b)))
 
-(defun sisyphus-explain-buffer-string= (buffer string)
-  (sisyphus-explain-string=
-   (m-buffer-at-string buffer)
-   string))
+(defun sisyphus-explain= (a b)
+  "Compare A and B and return an explanation.
+See `sisyphus=' for more information."
+  (let ((a (sisyphus-to-string a))
+        (b (sisyphus-to-string b)))
+    (cond
+     ((sisyphus= a b)
+      t)
+     ((executable-find "diff")
+      (sisyphus--explainer-diff-string= a b))
+     (t
+      (sisyphus--explainer-simple-string= a b)))))
 
-(put 'sisyphus-buffer-string=
-     'ert-explainer
-     'sisyphus-explain-buffer-string=)
+(put 'sisyphus= 'ert-explainer 'sisyphus-explain=)
 ;; #+end_src
 
 
-;; Compare buffer to buffer
-;; #+begin_src emacs-lisp
-(defun sisyphus-buffer= (a b)
-  (string=
-   (m-buffer-at-string a)
-   (m-buffer-at-string b)))
-
-(defun sisyphus-explain-buffer= (a b)
-  (sisyphus-explain-string=
-   (m-buffer-at-string a)
-   (m-buffer-at-string b)))
-
-(put 'sisyphus-buffer=
-     'ert-explainer
-     'sisyphus-explain-buffer=)
-;; #+end_src
-
-;; Compare string to file
-(defun sisyphus-file-string= (file string)
-  (string=
-   (with-temp-buffer
-     (insert-file-contents file)
-     (buffer-string))
-   string))
-
-(defun sisyphus-explain-file-string= (file string)
-  (sisyphus-explain-string=
-   (with-temp-buffer
-     (insert-file-contents file)
-     (buffer-string))
-   string))
-
-(put 'sisyphus-file-string=
-     'ert-explainer
-     'sisyphus-explain-file-string=)
-
-;; Compare buffer to file
-
-;; Compare file to file.
-
-;; ** Create buffers
+;; ** create buffers
 
 
 
@@ -250,10 +225,10 @@ print any messages!"
         (current-buffer)))))
 
 (defmacro sisyphus-with-temp-buffers (varlist &rest body)
-  "Bind variables in VARLIST to temp buffers, then eval BODY.
+  "Bind variables in varlist to temp buffers, then eval BODY.
 
 VARLIST is of the same form as a `let' binding. Each element is a
-symbol or a list (SYMBOL VALUEFORMS). Each symbol is bound to a
+symbol or a list (symbol valueforms). Each symbol is bound to a
 buffer generated with `generate-new-buffer'. VALUEFORMS are
 evaluated with the buffer current. Buffers are unconditionally
 killed at the end of the form."

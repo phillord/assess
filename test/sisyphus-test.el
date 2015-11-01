@@ -50,7 +50,7 @@ This also tests the advice on string=."
       :body
       (lambda ()
         (should
-         (string= "1" "2"))))))))
+         (sisyphus= "1" "2"))))))))
 
 (ert-deftest sisyphus-test--string= ()
   "Test that string= works after explanation added."
@@ -72,19 +72,50 @@ This also tests the advice on string=."
    (sisyphus-test--explanation
     (lambda ()
       (should
-       (string= "1" "2"))))))
+       (sisyphus= "1" "2"))))))
+
+(defvar sisyphus-test-hello.txt
+  (sisyphus-file
+   (relative-expand-file-name "../dev-resources/hello.txt")))
+
+(ert-deftest to-string ()
+  (should
+   (equal "hello"
+          (sisyphus-to-string "hello")))
+  (should
+   (with-temp-buffer
+     (equal "hello"
+            (progn
+              (insert "hello")
+              (sisyphus-to-string (current-buffer))))))
+  (should
+   (with-temp-buffer
+     (equal "hello"
+            (progn
+              (insert "hello")
+              (sisyphus-to-string
+               (list
+                :buffer
+                (buffer-name (current-buffer))))))))
+  (should
+   (with-temp-buffer
+     (equal "hello\n"
+            (sisyphus-to-string
+             sisyphus-test-hello.txt))))
+  (should-error
+   (sisyphus-to-string :hello)))
 
 (ert-deftest buffer-string= ()
   (with-temp-buffer
     (insert "hello")
     (should
-     (sisyphus-buffer-string=
+     (sisyphus=
       (current-buffer)
       "hello")))
   (with-temp-buffer
     (insert "goodbye")
     (should-not
-     (sisyphus-buffer-string=
+     (sisyphus=
       (current-buffer)
       "hello")))
   (should
@@ -93,7 +124,7 @@ This also tests the advice on string=."
       (with-temp-buffer
         (insert "goodbye")
         (should
-         (sisyphus-buffer-string=
+         (sisyphus=
           (current-buffer)
           "hello")))))))
 
@@ -104,14 +135,14 @@ This also tests the advice on string=."
        (b
         (insert "hello")))
     (should
-     (sisyphus-buffer= a b)))
+     (sisyphus= a b)))
   (sisyphus-with-temp-buffers
       ((a
         (insert "hello"))
        (b
         (insert "goodbye")))
     (should-not
-     (sisyphus-buffer=
+     (sisyphus=
       a b)))
   (should
    (sisyphus-with-temp-buffers
@@ -120,27 +151,25 @@ This also tests the advice on string=."
      (sisyphus-test--explanation
       (lambda ()
         (should
-         (sisyphus-buffer=
+         (sisyphus=
           a b)))))))
 
-(defvar sisyphus-test-hello.txt
-  (relative-expand-file-name "../dev-resources/hello.txt"))
 
 
 (ert-deftest file-string= ()
   (should
-   (sisyphus-file-string=
+   (sisyphus=
     sisyphus-test-hello.txt
     "hello\n"))
   (should-not
-   (sisyphus-file-string=
+   (sisyphus=
     sisyphus-test-hello.txt
     "goodbye"))
   (should
    (sisyphus-test--explanation
     (lambda ()
       (should
-       (sisyphus-file-string=
+       (sisyphus=
         sisyphus-test-hello.txt
         "goodbye"))))))
 
