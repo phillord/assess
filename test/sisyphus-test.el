@@ -154,8 +154,6 @@ This also tests the advice on string=."
          (sisyphus=
           a b)))))))
 
-
-
 (ert-deftest file-string= ()
   (should
    (sisyphus=
@@ -221,3 +219,39 @@ This also tests the advice on string=."
     (progn
       (sisyphus-with-temp-buffers (a b))
       (length (buffer-list))))))
+
+(ert-deftest sisyphus--test-indent-in-mode ()
+  (should
+   (sisyphus=
+    "(
+ (
+  (
+   (
+    ))))"
+    (sisyphus--indent-in-mode
+     'emacs-lisp-mode
+     "(\n(\n(\n(\n))))"))))
+
+(ert-deftest sisyphus--test-indentation= ()
+  (should
+   (sisyphus-indentation=
+    'emacs-lisp-mode
+    "(\n(\n(\n(\n))))"
+    "(
+ (
+  (
+   (
+    ))))"))
+  (should-not
+   (sisyphus-indentation=
+    'emacs-lisp-mode
+    "hello"
+    "goodbye"))
+  (should
+   (sisyphus-test--explanation
+    (lambda ()
+      (should
+       (sisyphus-indentation=
+        'emacs-lisp-mode
+        "hello"
+        "goodbye"))))))

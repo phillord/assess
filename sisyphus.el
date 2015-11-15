@@ -48,6 +48,7 @@
 (require 'pp)
 (require 'ert)
 (require 'm-buffer-at)
+(require 'm-buffer)
 (require 'dash)
 ;; #+end_src
 
@@ -107,8 +108,12 @@
    ;; error condition
    (_ (error "Type not recognised"))))
 
+(defun sisyphus-buffer (b)
+  "Add type data to the string B marking it as a buffer."
+  `(:buffer b))
+
 (defun sisyphus-file (f)
-  "Add type data to F marking it as a file."
+  "Add type data to the string F marking it as a file."
   `(:file ,f))
 ;; #+end_src
 
@@ -126,43 +131,42 @@ print any messages!"
 
 (defun sisyphus--explainer-diff-string= (a b)
   "Compare strings using diff output."
-  (let* ((diff
-          (executable-find "diff"))
-         (a-buffer
-          (generate-new-buffer "a"))
-         (b-buffer
-          (generate-new-buffer "b"))
-         (a-file
-          (make-temp-file
-           (buffer-name a-buffer)))
-         (b-file
-          (make-temp-file
-           (buffer-name b-buffer))))
-    (with-current-buffer
-        a-buffer
-      (insert a)
-      (sisyphus--write-file-silently a-file))
-    (with-current-buffer
-        b-buffer
-      (insert b)
-      (sisyphus--write-file-silently b-file))
-    (prog1
-        (format "Strings:\n%s\nand\n%s\nDiffer at:%s\n"
-                a b
-                (with-temp-buffer
-                  (call-process
-                   diff
-                   ;; no infile
-                   nil
-                   ;; dump to current buffer
-                   t
-                   nil
-                   "-c"
-                   a-file
-                   b-file)
-                  (buffer-string)))
-      (kill-buffer a-buffer)
-      (kill-buffer b-buffer))))
+  (sisyphus-with-preserved-buffer-list
+   (let* ((diff
+           (executable-find "diff"))
+          (a-buffer
+           (generate-new-buffer "a"))
+          (b-buffer
+           (generate-new-buffer "b"))
+          (a-file
+           (make-temp-file
+            (buffer-name a-buffer)))
+          (b-file
+           (make-temp-file
+            (buffer-name b-buffer))))
+     (with-current-buffer
+         a-buffer
+       (insert a)
+       (sisyphus--write-file-silently a-file))
+     (with-current-buffer
+         b-buffer
+       (insert b)
+       (sisyphus--write-file-silently b-file))
+     (prog1
+         (format "Strings:\n%s\nand\n%s\nDiffer at:%s\n"
+                 a b
+                 (with-temp-buffer
+                   (call-process
+                    diff
+                    ;; no infile
+                    nil
+                    ;; dump to current buffer
+                    t
+                    nil
+                    "-c"
+                    a-file
+                    b-file)
+                   (buffer-string)))))))
 
 (defun sisyphus--explainer-simple-string= (a b)
   "Compare strings for first difference."
@@ -198,9 +202,6 @@ See `sisyphus=' for more information."
 
 
 ;; ** create buffers
-
-
-
 (defmacro sisyphus-with-preserved-buffer-list (&rest body)
   "Evaluate BODY, but delete any buffers that have been created."
   (declare (debug t))
@@ -248,6 +249,49 @@ killed at the end of the form."
 ;; going to save it.
 
 ;; ** Indentation functions
+
+;; This is largely a re--implementation of `indent-region' but without the
+;; noise.
+(defun sisyphus--indent-buffer ()
+  (cond
+   ;; if indent-region-function is set, use it, and hope that it is not
+   ;; noisy.
+   (indent-region-function
+    (funcall indent-region-function (point-min) (point-max)))
+   (t
+    (-map
+     (lambda (m)
+       (goto-char m)
+       (indent-according-to-mode))
+     (m-buffer-match-line-start (current-buffer))))))
+
+(defun sisyphus--indent-in-mode (mode unindented)
+  (with-temp-buffer
+    (insert
+     (sisyphus-to-string unindented))
+    (funcall mode)
+    (sisyphus--indent-buffer)
+    (buffer-string)))
+
+(defun sisyphus-indentation= (mode unindented indented)
+  "Return non-nil if UNINDENTED indents in MODE to INDENTED.
+Both UNINDENTED and INDENTED can be any value usable by
+`sisyphus-to-string'. Indentation is performed using
+`indent-region'."
+  (sisyphus=
+   (sisyphus--indent-in-mode
+    mode
+    unindented)
+   indented))
+
+(defun sisyphus-explain-indentation= (mode unindented indented)
+  (sisyphus-explain=
+   (sisyphus--indent-in-mode
+    mode
+    unindented)
+   indented))
+
+(put 'sisyphus-indentation= 'ert-explainer 'sisyphus-explain-indentation=)
 
 ;; Set mode, indent normally, then compare
 
