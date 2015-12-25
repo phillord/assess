@@ -115,6 +115,17 @@
 (defun sisyphus-file (f)
   "Add type data to the string F marking it as a file."
   `(:file ,f))
+
+(defun sisyphus-to-file-name (file)
+  "Return file name for FILE.
+
+FILE can be either a string, or a plist returned by
+`sisyphus-file' or `sisyphus-make-related-file'."
+  (pcase file
+    ((pred stringp) file)
+    (`(:file ,f) f)
+    (_ (error "Type not recognised"))))
+
 ;; #+end_src
 
 ;; *** String Comparision
@@ -247,13 +258,73 @@ killed at the end of the form."
 
 ;; Again, same issues -- what if the file is already open. Especially if are
 ;; going to save it.
+(defun sisyphus--make-related-file-1 (file &optional directory)
+  (make-temp-file
+   (concat
+    (or directory
+        temporary-file-directory)
+    (file-name-nondirectory file))
+   nil
+   (concat "."
+           (file-name-extension file))))
+
+(defun sisyphus-make-related-file (file &optional directory)
+  "Open a copy of FILE in DIRECTORY.
+
+FILE is copied to a temporary file in DIRECTORY or
+`temporary-file-directory'. The copy has a unique name but shares
+the same file extension.
+
+This is useful for making test changes to FILE without actually
+altering it."
+  (let* ((file (sisyphus-to-file-name file))
+         (related-file
+          (sisyphus--make-related-file-1 file directory)))
+    (copy-file file related-file t)
+    (sisyphus-file
+     related-file)))
+
+(defmacro sisyphus-with-find-file (file &rest body)
+  "Open FILE and evaluate BODY in resultant buffer.
+
+FILE is opened with `find-file-noselect' so all the normal hooks
+for file opening should occur. The buffer is killed after the
+macro exits, unless it was already open. This happens
+unconditionally, even if the buffer has changed.
+
+See also `sisyphus-make-related-file'."
+  (declare (debug t) (indent 1))
+  (let ((temp-buffer (make-symbol "temp-buffer"))
+        (file-has-buffer-p (make-symbol "file-has-buffer-p"))
+        (file-s (make-symbol "file")))
+    `(let* ((,file-s ,file)
+            (,file-s (sisyphus-to-file-name ,file-s))
+            (,file-has-buffer-p
+             (find-buffer-visiting ,file-s))
+            (,temp-buffer))
+       (unwind-protect
+           (with-current-buffer
+               (setq ,temp-buffer
+                     (find-file-noselect ,file-s))
+             ,@body)
+         (when
+          ;; kill the buffer unless it was already open.
+             (and (not ,file-has-buffer-p)
+                  (buffer-live-p ,temp-buffer))
+           ;; kill unconditionally
+           (with-current-buffer ,temp-buffer
+             (set-buffer-modified-p nil))
+           (kill-buffer ,temp-buffer))))))
+
 
 ;; ** Indentation functions
 
 ;; This is largely a re--implementation of `indent-region' but without the
 ;; noise.
-(defun sisyphus--indent-buffer ()
+(defun sisyphus--indent-buffer (&optional column)
   (cond
+   (column
+    (indent-region (point-min) (point-max) column))
    ;; if indent-region-function is set, use it, and hope that it is not
    ;; noisy.
    (indent-region-function
@@ -277,7 +348,10 @@ killed at the end of the form."
   "Return non-nil if UNINDENTED indents in MODE to INDENTED.
 Both UNINDENTED and INDENTED can be any value usable by
 `sisyphus-to-string'. Indentation is performed using
-`indent-region'."
+`indent-region', which MODE should set up appropriately.
+
+See also `sisyphus-file-roundtrip-indentation=' for an
+alternative mechanism."
   (sisyphus=
    (sisyphus--indent-in-mode
     mode
@@ -285,6 +359,7 @@ Both UNINDENTED and INDENTED can be any value usable by
    indented))
 
 (defun sisyphus-explain-indentation= (mode unindented indented)
+  "Explanation function for `sisyphus-indentation='."
   (sisyphus-explain=
    (sisyphus--indent-in-mode
     mode
@@ -293,7 +368,76 @@ Both UNINDENTED and INDENTED can be any value usable by
 
 (put 'sisyphus-indentation= 'ert-explainer 'sisyphus-explain-indentation=)
 
-;; Set mode, indent normally, then compare
+(defun sisyphus--buffer-unindent (buffer)
+  (with-current-buffer
+      buffer
+    (sisyphus--indent-buffer 0)))
+
+(defun sisyphus--roundtrip-1 (comp mode indented)
+  (with-temp-buffer
+    (funcall comp
+             mode
+             (progn
+               (insert
+                (sisyphus-to-string indented))
+               (sisyphus--buffer-unindent (current-buffer))
+               (buffer-string))
+             indented)))
+
+(defun sisyphus-roundtrip-indentation= (mode indented)
+  "Return t if in MODE, text in INDENTED is corrected indented.
+
+This is checked by unindenting the text, then reindenting it according
+to MODE.
+
+See also `sisyphus-indentation=' and
+`sisyphus-file-roundtrip-indentation=' for alternative
+mechanisms of checking indentation."
+  (sisyphus--roundtrip-1
+   #'sisyphus-indentation=
+   mode indented))
+
+(defun sisyphus-explain-roundtrip-indentation= (mode indented)
+  "Explanation function for `sisyphus-roundtrip-indentation='."
+  (sisyphus--roundtrip-1
+   #'sisyphus-explain-indentation=
+   mode indented))
+
+(put 'sisyphus-roundtrip-indentation=
+     'ert-explainer
+     'sisyphus-explain-roundtrip-indentation=)
+
+(defun sisyphus--file-roundtrip-1 (comp file)
+  (funcall
+   comp
+   (sisyphus-with-find-file
+       (sisyphus-make-related-file file)
+     (sisyphus--buffer-unindent (current-buffer))
+     (sisyphus--indent-buffer)
+     (buffer-string))
+   file))
+
+(defun sisyphus-file-roundtrip-indentation= (file)
+  "Return t if text in FILE is indented correctly.
+
+FILE is copied with `sisyphus-make-related-file', so this
+function should be side-effect free whether or not FILE is
+already open. The file is opened with `find-file-noselect', so
+hooks associated with interactive visiting of a file should all
+be called, with the exception of directory local variables, as
+the copy of FILE will be in a different directory."
+  (sisyphus--file-roundtrip-1
+   #'sisyphus= file))
+
+(defun sisyphus-explain-file-roundtrip-indentation= (file)
+  "Explanation function for `sisyphus-file-roundtrip-indentation=."
+  (sisyphus--file-roundtrip-1
+   #'sisyphus-explain= file))
+
+(put 'sisyphus-file-roundtrip-indentation=
+     'ert-explainer
+     'sisyphus-explain-file-roundtrip-indentation=)
+
 
 ;; ** Font-lock support functions
 
