@@ -85,7 +85,6 @@ This also tests the advice on string=."
        (sisyphus= "1" "2"))))))
 ;; #+end_src
 
-
 ;; ** To-String testing
 
 ;; #+begin_src emacs-lisp
@@ -328,7 +327,6 @@ This also tests the advice on string=."
         "hello"
         "goodbye"))))))
 
-
 (defvar sisyphus-dev-resources
   (relative-expand-file-name "../dev-resources/"))
 
@@ -368,7 +366,6 @@ This also tests the advice on string=."
   (should-not
    (sisyphus-file-roundtrip-indentation=
     sisyphus-dev-elisp-unindented)))
-
 
 (ert-deftest sisyphus-test-file-roundtrip-indentation-explain= ()
   (should
@@ -447,6 +444,5 @@ This also tests the advice on string=."
     (lambda (buffer)
       (m-buffer-match buffer "defun"))
     'font-lock-keyword-face)))
-
 
 ;; #+end_src

@@ -426,7 +426,6 @@ See also `sisyphus-make-related-file'."
            (kill-buffer ,temp-buffer))))))
 ;; #+end_src
 
-
 ;; ** Indentation functions
 
 ;; There are two main ways to test indentation -- we can either take unindented
@@ -442,8 +441,10 @@ See also `sisyphus-make-related-file'."
 ;; We start with some functionality for making Emacs quiet while indenting.
 
 ;; #+begin_src emacs-lisp
-(defun sisyphus--indent-buffer ()
+(defun sisyphus--indent-buffer (&optional column)
   (cond
+   (column
+    (indent-region (point-min) (point-max) column))
    ;; if indent-region-function is set, use it, and hope that it is not
    ;; noisy.
    (indent-region-function
@@ -467,7 +468,10 @@ See also `sisyphus-make-related-file'."
   "Return non-nil if UNINDENTED indents in MODE to INDENTED.
 Both UNINDENTED and INDENTED can be any value usable by
 `sisyphus-to-string'. Indentation is performed using
-`indent-region'."
+`indent-region', which MODE should set up appropriately.
+
+See also `sisyphus-file-roundtrip-indentation=' for an
+alternative mechanism."
   (sisyphus=
    (sisyphus--indent-in-mode
     mode
@@ -475,6 +479,7 @@ Both UNINDENTED and INDENTED can be any value usable by
    indented))
 
 (defun sisyphus-explain-indentation= (mode unindented indented)
+  "Explanation function for `sisyphus-indentation='."
   (sisyphus-explain=
    (sisyphus--indent-in-mode
     mode
@@ -483,11 +488,10 @@ Both UNINDENTED and INDENTED can be any value usable by
 
 (put 'sisyphus-indentation= 'ert-explainer 'sisyphus-explain-indentation=)
 
-;; TODO -- this bit is noisy and we need to stop it being so
 (defun sisyphus--buffer-unindent (buffer)
   (with-current-buffer
       buffer
-    (indent-region (point-min) (point-max) nil)))
+    (sisyphus--indent-buffer 0)))
 
 (defun sisyphus--roundtrip-1 (comp mode indented)
   (with-temp-buffer
@@ -501,11 +505,20 @@ Both UNINDENTED and INDENTED can be any value usable by
              indented)))
 
 (defun sisyphus-roundtrip-indentation= (mode indented)
+  "Return t if in MODE, text in INDENTED is corrected indented.
+
+This is checked by unindenting the text, then reindenting it according
+to MODE.
+
+See also `sisyphus-indentation=' and
+`sisyphus-file-roundtrip-indentation=' for alternative
+mechanisms of checking indentation."
   (sisyphus--roundtrip-1
    #'sisyphus-indentation=
    mode indented))
 
 (defun sisyphus-explain-roundtrip-indentation= (mode indented)
+  "Explanation function for `sisyphus-roundtrip-indentation='."
   (sisyphus--roundtrip-1
    #'sisyphus-explain-indentation=
    mode indented))
@@ -525,20 +538,25 @@ Both UNINDENTED and INDENTED can be any value usable by
    file))
 
 (defun sisyphus-file-roundtrip-indentation= (file)
+  "Return t if text in FILE is indented correctly.
+
+FILE is copied with `sisyphus-make-related-file', so this
+function should be side-effect free whether or not FILE is
+already open. The file is opened with `find-file-noselect', so
+hooks associated with interactive visiting of a file should all
+be called, with the exception of directory local variables, as
+the copy of FILE will be in a different directory."
   (sisyphus--file-roundtrip-1
    #'sisyphus= file))
 
 (defun sisyphus-explain-file-roundtrip-indentation= (file)
+  "Explanation function for `sisyphus-file-roundtrip-indentation=."
   (sisyphus--file-roundtrip-1
    #'sisyphus-explain= file))
-;; #+end_src
 
-;; #+begin_src emacs-lisp
 (put 'sisyphus-file-roundtrip-indentation=
      'ert-explainer
      'sisyphus-explain-file-roundtrip-indentation=)
-;; #+end_src
-
 
 
 ;; ** Font-lock support functions
