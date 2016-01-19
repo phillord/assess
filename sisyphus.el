@@ -130,7 +130,7 @@ string into something that will identified appropriately."
 
 (defun sisyphus-buffer (b)
   "Add type data to the string B marking it as a buffer."
-  `(:buffer b))
+  `(:buffer ,b))
 
 (defun sisyphus-file (f)
   "Add type data to the string F marking it as a file."
@@ -230,7 +230,7 @@ afterwards for cleanup by the operating system."
 (defun sisyphus--explainer-simple-string= (a b)
   "Compare strings for first difference."
   ;; We could do a bit more here.
-  (format "String :%s:%s: are not equal."))
+  (format "String :%s:%s: are not equal." a b))
 ;; #+end_src
 
 ;; And the actual predicate function and explainer.
