@@ -7,7 +7,7 @@
 ;; Author: Phillip Lord <phillip.lord@russet.org.uk>
 ;; Maintainer: Phillip Lord <phillip.lord@russet.org.uk>
 ;; Version: 0.1
-;; Package-Requires: ((emacs "24.4")(m-buffer "0.13")(dash))
+;; Package-Requires: ((emacs "24.4")(m-buffer "0.13")(dash "2.12.0"))
 
 ;; The contents of this file are subject to the GPL License, Version 3.0.
 
@@ -150,7 +150,7 @@ string into something that will identified appropriately."
 
 (defun sisyphus-buffer (b)
   "Add type data to the string B marking it as a buffer."
-  `(:buffer b))
+  `(:buffer ,b))
 
 (defun sisyphus-file (f)
   "Add type data to the string F marking it as a file."
@@ -316,7 +316,7 @@ afterwards for cleanup by the operating system."
 (defun sisyphus--explainer-simple-string= (a b)
   "Compare strings for first difference."
   ;; We could do a bit more here.
-  (format "String :%s:%s: are not equal."))
+  (format "String :%s:%s: are not equal." a b))
 ;; #+end_src
 
 ;; And the actual predicate function and explainer. We do a simple string
