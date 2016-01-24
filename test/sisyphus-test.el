@@ -28,6 +28,7 @@
 (require 'load-relative)
 (require 'sisyphus)
 (require 'cl-lib)
+
 ;; #+end_src
 
 ;; ** Test Extraction
@@ -395,7 +396,6 @@ This also tests the advice on string=."
     2
     'font-lock-keyword-face)))
 
-
 (ert-deftest sisyphus-test-face-at-multiple-positions ()
   (should
    (sisyphus-face-at=
@@ -435,6 +435,22 @@ This also tests the advice on string=."
     'emacs-lisp-mode
     (lambda(buf)
       (m-buffer-match buf "defun"))
+    'font-lock-keyword-face)))
+
+;; Need extra support from m-buffer.
+(ert-deftest sisyphus-test-face-at-with-strings ()
+  :expected-result :failed
+  (should
+   (sisyphus-face-at=
+    "(defun x ())\n(defun y ())\n(defun z ())"
+    'emacs-lisp-mode
+    "defun"
+    'font-lock-keyword-face))
+  (should
+   (sisyphus-face-at=
+    "(defun x ())\n(defmacro y ())\n(defun z ())"
+    'emacs-lisp-mode
+    '("defun" "defmacro" "defun")
     'font-lock-keyword-face)))
 
 (ert-deftest sisyphus-test-file-face-at ()
