@@ -46,6 +46,9 @@
 ;; Sisyphus aims also to be as noiseless as possible, reducing and suppressing
 ;; extraneous messages where possible, to leave a clean ert output in batch mode.
 
+
+;;; Status:
+
 ;; Sisyphus is currently a work in progress; the API is not currently stable.
 ;; Even the name is somewhat is doubt. Sisyphus seemed like a good idea when I
 ;; started, but I keep spelling it wrong. I may also considering winding this
@@ -64,23 +67,12 @@
 (require 'dash)
 ;; #+end_src
 
-;; We need an error symbol to throw occasionally during testing. Throwing `error'
-;; itself is a bit dangerous because we might get that for other reasons; so we
-;; create a new symbol here.
-
-;; #+begin_src emacs-lisp
-(define-error 'sisyphus-deliberate-error
-  "An error deliberately caused during testing."
-  'error)
-;; #+end_src
-
 ;; ** Advice
 
 ;; Emacs-24 insists on printing out results on a single line with escaped
 ;; newlines. This does not work so well with the explainer functions in sisyphus
-;; and, probably, does not make sense anywhere. So, we advice here.
-
-;; Emacs-25 has this fixed.
+;; and, probably, does not make sense anywhere. So, we advice here. The use of
+;; nadvice.el limits this package to Emacs 24.4. Emacs 25 has this fixed.
 
 ;; #+begin_src emacs-lisp
 (when (= emacs-major-version 24)
@@ -95,17 +87,45 @@
    #'sisyphus--ert-pp-with-indentation-and-newline))
 ;; #+end_src
 
+;; ** Deliberate Errors
+
+;; Sometimes during testing, we need to throw an "error" deliberately. Sisyphus'
+;; own test cases do this to check that state is preserved with this form of
+;; non-local exit. Throwing `error' itself is a bit dangerous because we might
+;; get that for other reasons; so we create a new symbol here for general use.
+
+;; #+begin_src emacs-lisp
+(define-error 'sisyphus-deliberate-error
+  "An error deliberately caused during testing."
+  'error)
+;; #+end_src
+
 ;; ** Types
 
-;; Many tests on files, buffers actually end up being string comparision. We
-;; introduce a set of "types" where so that we can distinguish between
-;; strings, buffer names and file names, passing them at a single parameter.
-;; This reduces the complexity of later parts of the API.
+;; Many tests on files or buffers actually end up being string comparision.
+;; In many cases, we want to compare the *contents* of a buffer to, for example,
+;; the *contents* of a file.
+
+;; Emacs normally uses strings to represent files (i.e. file names) and can also
+;; use them to represent buffers (i.e. buffer names). So, here, we introduce a
+;; set of "types" where so that we can distinguish between strings, buffer names
+;; and file names, passing them at a single parameter. This will allow us to make
+;; later parts of the API use overloaded methods based on their type.
 
 ;; "Types" are either a Emacs core type (as with buffers and strings), or an 2
 ;; element list (I haven't used cons cells in case I want to add more elements),
 ;; with a keyword at the head. This allows sisyphus to distinguish between a
 ;; simple string and a file or buffer name.
+
+;; #+begin_src elisp
+;; Identify "~/.emacs" as a file name
+;; (sisyphus-file "~/.emacs")
+
+;; Identify "*Messages*" as a buffer
+;; (sisyphus-buffer "*Messages*")
+;; #+end_src
+
+;; *** Implementation
 
 ;; #+begin_src emacs-lisp
 (defun sisyphus-to-string (x)
@@ -147,25 +167,93 @@ FILE can be either a string, or a plist returned by
     (_ (error "Type not recognised"))))
 ;; #+end_src
 
-;; *** Entity Comparision
+;; ** Entity Comparision
 
 ;; In this section, we provide support for comparing strings, buffer or file
 ;; contents. The main entry point is `sisyphus=', which works like `string=' but
 ;; on any of the three data types, in any order.
 
+;; #+begin_src elisp
+;;   ;; Compare Two Strings
+;;   (sisyphus= "hello" "goodbye")
+
+;;   ;; Compare the contents of Two Buffers
+;;   (sisyphus=
+;;    (sisyphus-buffer "sisyphus.el")
+;;    (sisyphus-buffer "sisyphus-previous.el"))
+
+;;   ;; Compare the contents of Two files
+;;   (sisyphus=
+;;    (sisyphus-file "~/.emacs")
+;;    (sisyphus-file "~/.emacs"))
+
+;;   ;; We can use core Emacs types also
+;;   (sisyphus=
+;;    (sisyphus-buffer "sisyphus.el")
+;;    (get-buffer "sisyphus-previous.el"))
+
+;;   ;; And in any combination; here we compare a string and the contents of a
+;;   ;; file.
+;;   (sisyphus=
+;;    ";; This is an empty .emacs file"
+;;    (sisyphus-file "~/.emacs"))
+;; #+end_src
+
 ;; In addition, `sisyphus=' has an "explainer" function attached which produces a
 ;; richer output when `sisyphus=' returns false, showing diffs of the string
-;; comparison. As `sisyphus=' has a compatible interface with `string=' it is
-;; also possible to add this explainer function to `string=' for use with
-;; tests which do not otherwise use sisyphus.
+;; comparison. Compare, for example, the results of running these two tests, one
+;; using `string=' and one using `sisyphus='.
+
+;; #+begin_example
+;; F temp
+;;     (ert-test-failed
+;;      ((should
+;;        (string= "a" "b"))
+;;       :form
+;;       (string= "a" "b")
+;;       :value nil))
+
+;; F test-sisyphus=
+;;     (ert-test-failed
+;;      ((should
+;;        (sisyphus= "a" "b"))
+;;       :form
+;;       (sisyphus= "a" "b")
+;;       :value nil :explanation "Strings:
+;; a
+;; and
+;; b
+;; Differ at:*** /tmp/a935uPW	2016-01-20 13:25:47.373076381 +0000
+;; --- /tmp/b9357Zc	2016-01-20 13:25:47.437076381 +0000
+;; ***************
+;; *** 1 ****
+;; ! a
+;; \\ No newline at end of file
+;; --- 1 ----
+;; ! b
+;; \\ No newline at end of file
+
+;; "))
+;; #+end_example
+
+;; As `sisyphus=' has a compatible interface with `string=' it is also possible
+;; to add this explainer function to `string=' for use with tests which do not
+;; otherwise use sisyphus, like so:
+
+;; #+begin_src elisp
+;; (put 'string= 'ert-explainer 'sisyphus-explain=)
+;; #+end_src
 
 ;; Currently, `sisyphus' uses the ~diff~ program to do the comparison if it is
 ;; available, or falls back to just reporting a difference -- this could do with
-;; improving, but it is at least no worse than the existing behaviour for
-;; string comparison.
+;; improving, but it is at least no worse than the existing behaviour for string
+;; comparison.
+
+;; *** Implementation
 
 ;; We start by writing a file silently -- this is important because the
-;; ~*Messages*~ buffer should not be affected by the machinary of a failing test.
+;; ~*Messages*~ buffer should not be affected by the machinary of a failing test,
+;; as it hides what is happening from the test code.
 
 ;; #+begin_src emacs-lisp
 (defun sisyphus--write-file-silently (filename)
@@ -178,11 +266,9 @@ print any messages!"
    'dont-display-wrote-file-message))
 ;; #+end_src
 
-;; Diff does a nicer comparison than anything in Emacs, although a lisp should
-;; would have been more portable. Currently, we leave the files in place; the
-;; original idea of this was to enable further comparison, but it does create a
-;; lot of temporary files for the average test run, so it might need to be
-;; reconsidered.
+;; Diff does a nicer comparison than anything in Emacs, although a lisp
+;; implementation would have been more portable. Diff is used by quite a few
+;; other tools in Emacs, so probably most people will have access to diff.
 
 ;; #+begin_src emacs-lisp
 (defun sisyphus--explainer-diff-string= (a b)
@@ -233,7 +319,8 @@ afterwards for cleanup by the operating system."
   (format "String :%s:%s: are not equal."))
 ;; #+end_src
 
-;; And the actual predicate function and explainer.
+;; And the actual predicate function and explainer. We do a simple string
+;; comparison on the contents of each entity.
 
 ;; #+begin_src emacs-lisp
 (defun sisyphus= (a b)
@@ -265,21 +352,76 @@ automatically. See `sisyphus=' for more information."
 (put 'sisyphus= 'ert-explainer 'sisyphus-explain=)
 ;; #+end_src
 
-
 ;; ** Buffer creation
 
-;; For tests, it is often better to use temporary buffers for two reasons, as it
-;; is much less affected by the existing state of Emacs; this is particularly the
-;; case where tests are being developed as the developer may be trying to change
-;; or write test files.
+;; For tests, it is often better to use temporary buffers, as it is much less
+;; affected by the existing state of Emacs, and much less likely to affect future
+;; state; this is particularly the case where tests are being developed as the
+;; developer may be trying to change or write test files at the same time as
+;; Emacs is trying to use them for testing.
 
 ;; Emacs really only provides a single primitive `with-temp-buffer' for this
 ;; situation, and that only creates a single temporary buffer at a time. Nesting
 ;; of these forms sometimes works, but fails if we need to operate on two buffers
 ;; at once.
 
-;; So, we provide an environment for restoring the buffer list, and another for
-;; creating multiple temporary buffers and binding them to variables.
+;; So, we provide an environment for restoring the buffer list. This allows any
+;; creation of buffers we need for testing, followed by clean up afterwards. For
+;; example, a trivial usage would be to remove buffers explicitly created.
+
+;; #+begin_src elisp
+;;   (sisyphus-with-preserved-buffer-list
+;;    (get-buffer-create "a")
+;;    (get-buffer-create "b")
+;;    (get-buffer-create "c"))
+;; #+end_src
+
+;; Any buffer created in this scope is removed, whether this is as a direct or
+;; indirect result of the function. For example, this usage creates a ~*Help*~
+;; buffer which then gets removed again.
+
+;; #+begin_src elisp
+;;   (sisyphus-with-preserved-buffer-list
+;;    (describe-function 'self-insert-command))
+;; #+end_src
+
+;; This does not prevent changes to existing buffers of course. If ~*Help*~ is
+;; already open before evaluation, it will remain open afterwards but with
+;; different content.
+
+;; Sometimes, it is useful to create several temporary buffers at once.
+;; `sisyphus-with-temp-buffers' provides an easy mechanism for doing this, as
+;; well as evaluating content in these buffers. For example, this returns true
+;; (actually three killed buffers which were live when the `mapc' form runs).
+
+;; #+begin_src elisp
+;;   (sisyphus-with-temp-buffers
+;;       (a b c)
+;;     (mapc #'buffer-live-p (list a b c)))
+;; #+end_src
+
+;; While this creates two buffers, puts "hellogoodbye" into one and "goodbye"
+;; into the other, then compares the contents of these buffers with `sisyphus='.
+
+;; #+begin_src elisp
+;;   (sisyphus-with-temp-buffers
+;;       ((a (insert "hello")
+;;           (insert "goodbye"))
+;;        (b (insert "goodbye")))
+;;     (sisyphus= a b))
+;; #+end_src
+
+;; Finally, we provide a simple mechanism for converting any sisyphus type into a
+;; buffer. The following form, for example, returns the contents of the ~.emacs~
+;; file.
+
+;; #+begin_src elisp
+;;   (sisyphus-as-temp-buffer
+;;       (sisyphus-file "~/.emacs")
+;;     (buffer-string))
+;; #+end_src
+
+;; ** Implementation
 
 ;; #+begin_src emacs-lisp
 (defmacro sisyphus-with-preserved-buffer-list (&rest body)
@@ -301,7 +443,7 @@ automatically. See `sisyphus=' for more information."
        (list item))
     `(,(car item)
       (with-current-buffer
-          (generate-new-buffer "sisyphus-with-temp-buffers")
+          (generate-new-buffer " *sisyphus-with-temp-buffers*")
         ,@(cdr item)
         (current-buffer)))))
 ;; #+end_src
@@ -349,12 +491,40 @@ See `sisyphus-to-string' for the meaning of type-appropriate."
 ;; use of Emacs with parallelisation, the situation becomes intractable.
 
 ;; A solution is to copy files before we open them, which means that they can be
-;; changed freely. Largely the copied file will behave the same as the main file;
+;; changed freely. Largely, the copied file will behave the same as the main file;
 ;; the only notable exception to this is those features which depend on the
 ;; current working directory (dir-local variables, for example).
 
-;; We also add support here for the types introduced earlier, which is mostly so
-;; that they do not get in the way.
+;; `sisyphus-make-related-file' provides a simple method for doing this. For
+;; example, this form will return exactly the contents of ~my-test-file.el~, even
+;; if that file is current open in the current Emacs (even if the buffer has not
+;; been saved). Likewise, a test opening this file could be run in a batch Emacs
+;; without interfering with an running interactive Emacs.
+
+;; #+begin_src elisp
+;;   (sisyphus-as-temp-buffer
+;;       (sisyphus-make-related-file "dev-resources/my-test-file.el")
+;;     (buffer-substring))
+;; #+end_src
+
+;; We also add support for opening a file, as if it where opened interactively,
+;; with all the appropriate hooks being run, in the form of the
+;; `sisyphus-with-find-file' macro. Combined with `sisyphus-make-related-file',
+;; we can write the following expression without removing our ~.emacs~.
+
+;; #+begin_src elisp
+;;   (sisyphus-with-find-file
+;;       (sisyphus-make-related-file "~/.emacs")
+;;     (erase-buffer)
+;;     (save-buffer))
+;; #+end_src
+
+;; #+RESULTS:
+
+;; *** Implementation
+
+;; All of the functions here support the file type introduced earlier, but
+;; interpret raw strings as a file also.
 
 ;; #+begin_src emacs-lisp
 (defun sisyphus--make-related-file-1 (file &optional directory)
@@ -382,16 +552,6 @@ altering it."
     (copy-file file related-file t)
     (sisyphus-file
      related-file)))
-;; #+end_src
-
-;; We also need the ability to open a file in the same way as it would in a more
-;; interactive environment. We make some efforts to maintain the open-or-closed
-;; status of the file and restore this at the end, but this may still result in
-;; some strangeness if, for example, a file is already open in a buffer and has
-;; been changed. This can be avoided through the use of
-;; `sisyphus-make-related-file'.
-
-;; #+begin_src emacs-lisp
 
 (defmacro sisyphus-with-find-file (file &rest body)
   "Open FILE and evaluate BODY in resultant buffer.
@@ -438,7 +598,61 @@ See also `sisyphus-make-related-file'."
 ;; `auto-mode-alist' functionality to determine the mode. Sisyphus supports both
 ;; of these also.
 
-;; We start with some functionality for making Emacs quiet while indenting.
+;; The simplest function is `sisyphus-indentation=' which we can use as follows.
+;; In this case, we have mixed a multi-line string and a single line with
+;; control-n characters; this is partly to show that we can, and partly to make
+;; sure that the code works both in an `org-mode' buffer and an ~*Org Src*~ buffer.
+
+;; #+begin_src elisp
+;;   (sisyphus-indentation=
+;;    'emacs-lisp-mode
+;;    "(sisyphus-with-find-file
+;;   \"~/.emacs\"
+;;   (buffer-string))"
+;;    "(sisyphus-with-find-file\n    \"~/.emacs\"\n  (buffer-string))")
+;; #+end_src
+
+;; #+RESULTS:
+;; : t
+
+;; Probably more useful is `sisyphus-roundtrip-indentation=' which allows us to
+;; just specify the indented form; in this case, the string is first unindented
+;; (every line starts at the first position) and then reindented. This saves the
+;; effort of keeping the text in both the indented and unindent forms in sync
+;; (but without the indentation).
+
+;; #+begin_src elisp
+;;   (sisyphus-roundtrip-indentation=
+;;    'emacs-lisp-mode
+;;    "(sisyphus-with-find-file\n    \"~/.emacs\"\n  (buffer-string))")
+;; #+end_src
+
+;; #+RESULTS:
+;; : t
+
+;; While these are useful for simple forms of indentation checking, they have
+;; the significant problem of writing indented code inside an Emacs string. An
+;; easier solution for longer pieces of code is to use
+;; `sisyphus-file-roundtrip-indentation='. This opens a file (safely using
+;; `sisyphus-make-related-file'), unindents, and reindents. The mode must be set
+;; up automatically by the file type.
+
+;; #+begin_src elisp
+;;   (sisyphus-file-roundtrip-indentation=
+;;     "sisyphus.el")
+;; #+end_src
+
+;; #+RESULTS:
+
+;; All of these methods are fully supported with ert explainer functions -- as
+;; before they use diff where possible to compare the two forms.
+
+
+;; *** Implementation
+
+;; We start with some functionality for making Emacs quiet while indenting,
+;; otherwise we will get a large amount of spam on the command line. Emacs needs
+;; to have a better technique for shutting up `message'.
 
 ;; #+begin_src emacs-lisp
 (defun sisyphus--indent-buffer (&optional column)
@@ -463,7 +677,11 @@ See also `sisyphus-make-related-file'."
     (funcall mode)
     (sisyphus--indent-buffer)
     (buffer-string)))
+;; #+end_src
 
+;; Now for the basic indentation= comparison.
+
+;; #+begin_src emacs-lisp
 (defun sisyphus-indentation= (mode unindented indented)
   "Return non-nil if UNINDENTED indents in MODE to INDENTED.
 Both UNINDENTED and INDENTED can be any value usable by
@@ -487,7 +705,11 @@ alternative mechanism."
    indented))
 
 (put 'sisyphus-indentation= 'ert-explainer 'sisyphus-explain-indentation=)
+;; #+end_src
 
+;; Roundtripping.
+
+;; #+begin_src emacs-lisp
 (defun sisyphus--buffer-unindent (buffer)
   (with-current-buffer
       buffer
@@ -526,7 +748,11 @@ mechanisms of checking indentation."
 (put 'sisyphus-roundtrip-indentation=
      'ert-explainer
      'sisyphus-explain-roundtrip-indentation=)
+;; #+end_src
 
+;; And file based checking.
+
+;; #+begin_src emacs-lisp
 (defun sisyphus--file-roundtrip-1 (comp file)
   (funcall
    comp
@@ -557,9 +783,9 @@ the copy of FILE will be in a different directory."
 (put 'sisyphus-file-roundtrip-indentation=
      'ert-explainer
      'sisyphus-explain-file-roundtrip-indentation=)
+;; #+end_src
 
-
-;; ** Font-lock support functions
+;; ** Font-Lock
 
 ;; Set up a buffer from string or file, font-lock it, test it.
 
@@ -570,74 +796,37 @@ the copy of FILE will be in a different directory."
 
 
 ;; #+begin_src elisp
-;;   ;; location or marker
-;;   (sisyphus-font-at=
-;;    'file-buffer-or-string
-;;    200
-;;    'font-lock-comment-face)
+;;    (sisyphus-face-at=
+;;     "(defun x ())"
+;;     'emacs-lisp-mode
+;;     2
+;;     'font-lock-keyword-face)
 
-;;   ;; string
-;;   (sisyphus-font-at=
-;;    'file-buffer-or-string
-;;    "Class"
-;;    'font-lock-type-face)
+;;    (sisyphus-face-at=
+;;     "(defun x ())
+;; (defun y ())
+;; (defun z ())"
+;;     'emacs-lisp-mode
+;;     '(2 15 28)
+;;     'font-lock-keyword-face)
 
-;;   ;; regexp match
-;;   (sisyphus-font-at=
-;;    'file-buffer-or-string
-;;    (sisyphus-match regexp subexp)
-;;    'font-lock-comment-face)
+;;    (sisyphus-face-at=
+;;     "(defun x ())"
+;;     'emacs-lisp-mode
+;;     '(2 8)
+;;     '(font-lock-keyword-face font-lock-function-name-face))
 
-;;   ;; all location checks
-;;   (sisyphus-font-at=
-;;    'file-buffer-or-string
-;;    '(100 200 300)
-;;    'font-lock-comment-face)
 
-;;   ;; The last argument should be listifiable also
-;;   (sisyphus-font-at=
-;;    'file-buffer-or-string
-;;    '(100 200 300)
-;;    '(font-lock-comment-face font-lock-type-face font-lock-comment-face))
+;;    (sisyphus-face-at=
+;;     "(defun x ())\n(defun y ())\n(defun z ())"
+;;     'emacs-lisp-mode
+;;     (lambda(buf)
+;;       (m-buffer-match buf "defun"))
+;;     'font-lock-keyword-face)
 ;; #+end_src
 
-;; m-buffer-match should work perfectly well as in the second position, except
-;; that it requires a buffer be passed, and we don't have it -- it will be a
-;; temporary buffer. If we add support for nil as the buffer to sisyphus-font-at=
-;; we can get away with this. Don't need to nil markers because we kill the
-;; buffer anyway.
 
-;; This looks okay, but there is a lot of boilerplate here that I do not like.
-;; Second option rather cuts that down.
-
-;; #+begin_src elisp
-;;   (sisyphus-with-temp-buffer
-;;    (a (insert-string
-;;        (sisyphus-to-string 'file-buffer-or-string)))
-;;    (sisyphus-font-at=
-;;     nil
-;;     (m-buffer-match a "bob")
-;;     '(font-lock-comment-face)))
-
-;;   ;; We could add a new macro like so...
-;;   (sisyphus-as-current-buffer
-;;    'file-buffer-or-string
-;;    (sisyphus-font-at=
-;;     nil
-;;     (m-buffer-match (current-buffer) "bob")
-;;     '(font-lock-comment-face)))
-;; #+end
-
-;; but the implementation of this is a total pain in the ass because I have to
-;; use with-temp-buffer. And it doesn't work for the find file. The only thing
-;; that I can sanely do is to pass in a function which take
-
-;; (sisyphus-file-face-at=
-;;  "bob.el"
-;;  (lambda (buffer)
-;;    (m-buffer-match :buffer buffer "defun")))
-
-
+;; #+begin_src emacs-lisp
 (defun sisyphus--face-at-location=
     (location face property throw-on-nil)
   ;; it's match data
@@ -805,15 +994,10 @@ operates over files and takes the mode from that file."
 (put 'sisyphus-file-face-at=
      'ert-explainer
      'sisyphus-explain-file-face-at=)
+;; #+end_src
 
-;; ** Pre/post command support functions
-
-;; Not sure how I can test these better -- but worth thinking about -- I guess do
-;; some set up, then and buffer-local pre or post command, run some stuff, compare.
 
 ;; #+begin_src emacs-lisp
 (provide 'sisyphus)
 ;;; sisyphus.el ends here
 ;; #+end_src
-
-
