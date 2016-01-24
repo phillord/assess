@@ -15,5 +15,7 @@ just-test:
 
 test: install just-test
 
+package:
+	cask package
 
-.PHONY: test
+.PHONY: test dist
