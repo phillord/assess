@@ -437,9 +437,7 @@ This also tests the advice on string=."
       (m-buffer-match buf "defun"))
     'font-lock-keyword-face)))
 
-;; Need extra support from m-buffer.
 (ert-deftest sisyphus-test-face-at-with-strings ()
-  :expected-result :failed
   (should
    (sisyphus-face-at=
     "(defun x ())\n(defun y ())\n(defun z ())"

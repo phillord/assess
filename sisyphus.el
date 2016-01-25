@@ -7,7 +7,7 @@
 ;; Author: Phillip Lord <phillip.lord@russet.org.uk>
 ;; Maintainer: Phillip Lord <phillip.lord@russet.org.uk>
 ;; Version: 0.1
-;; Package-Requires: ((emacs "24.4")(m-buffer "0.13")(dash "2.12.0"))
+;; Package-Requires: ((emacs "24.4")(m-buffer "0.14")(dash "2.12.0"))
 
 ;; The contents of this file are subject to the GPL License, Version 3.0.
 
@@ -901,10 +901,7 @@ the copy of FILE will be in a different directory."
            ((integerp first-location)
             (m-buffer-pos-to-marker buffer locations))
            ((stringp first-location)
-            ;; this function does not exist yet -- should find the first
-            ;; occurance of exactly the first string, then the first
-            ;; occurrence of the next and so on
-            (m-buffer-find-string buffer locations))
+            (m-buffer-match-multi locations :buffer buffer))
            ;; markers
            ((markerp first-location)
             locations)
