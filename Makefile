@@ -18,4 +18,9 @@ test: install just-test
 package:
 	cask package
 
+discover-test:
+	cask exec emacs --batch --load sisyphus.el --load sisyphus-discover.el \
+	-f sisyphus-discover-run-and-exit-batch
+
 .PHONY: test dist
+

@@ -1,0 +1,37 @@
+
+** Pre/post command support functions
+
+Not sure how I can test these better -- but worth thinking about -- I guess do
+some set up, then and buffer-local pre or post command, run some stuff,
+compare.
+
+
+Do these get called with "call-interactively"?
+
+
+** Minor mode local and global activation
+
+Tricky because global mode will affect all buffers.
+
+This is a tricky one to preserve activation status, but it can work.
+
+
+
+
+
+** Should call functions
+
+Something to test whether a function has been called, and with what values.
+
+Easy enough to do with advice.
+
+** Better ERT batch output
+
+ERT should output parsable error messages, with locations of files in batch.
+
+Compile mode should actually pick this up!
+
+** Sisyphus-compile
+
+A compile mode for sisyphus which returns an internal Emacs. Should also
+prompt for emacs executable (with versions!), selector.
