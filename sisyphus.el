@@ -787,13 +787,16 @@ the copy of FILE will be in a different directory."
 
 ;; ** Font-Lock
 
-;; Set up a buffer from string or file, font-lock it, test it.
+;; Here we define two predicates that can be used to checking
+;; fontification/syntax highlighting; as with indentation, one accepts strings
+;; but requires an explicit mode, while the other reads from file and depends on
+;; the normal Emacs mechanisms for defining the mode. These two are
+;; `sisyphus-font-at=' and `sisyphus-file-font-at='. Both of these have the same
+;; interface and have attached explainer functions. Here, we show examples with
+;; `sisyphus-face-at='.
 
-;; We need to define some functionality for testing font-lock.
-
-;; API below -- so we can define functionality that works generally over a list,
-;; and automatically coerce an item to a list.
-
+;; The simplest use is to specify a point location and a face. This returns true
+;; if at least that face is present at the location.
 
 ;; #+begin_src elisp
 ;;    (sisyphus-face-at=
@@ -801,7 +804,12 @@ the copy of FILE will be in a different directory."
 ;;     'emacs-lisp-mode
 ;;     2
 ;;     'font-lock-keyword-face)
+;; #+end_src
 
+;; It is also possible to specify several locations in a list, with a single
+;; face. This checks that the given font is present at every location.
+
+;; #+begin_src elisp
 ;;    (sisyphus-face-at=
 ;;     "(defun x ())
 ;; (defun y ())
@@ -809,14 +817,45 @@ the copy of FILE will be in a different directory."
 ;;     'emacs-lisp-mode
 ;;     '(2 15 28)
 ;;     'font-lock-keyword-face)
+;; #+end_src
 
+;; Or, we can specify a list of faces in which case the locations and faces are
+;; checked in a pairwise manner.
+
+;; #+begin_src elisp
 ;;    (sisyphus-face-at=
 ;;     "(defun x ())"
 ;;     'emacs-lisp-mode
 ;;     '(2 8)
 ;;     '(font-lock-keyword-face font-lock-function-name-face))
+;; #+end_src
+
+;; It is also possible to define locations with regexps; again either one or
+;; multiple regexps can be used. With a single string, all matches are checked,
+;; with the first match to the first is checked, then the next match to the
+;; second, incrementally.
+
+;; #+begin_src elisp
+;;    (sisyphus-face-at=
+;;     "(defun x ())\n(defun y ())\n(defun z ())"
+;;     'emacs-lisp-mode
+;;     "defun"
+;;     'font-lock-keyword-face)
+
+;;    (sisyphus-face-at=
+;;     "(defun x ())\n(defmacro y ())\n(defun z ())"
+;;     'emacs-lisp-mode
+;;     '("defun" "defmacro" "defun")
+;;     'font-lock-keyword-face)
+;; #+end_src
 
 
+;; The locations can also be specified as a `lambda' which takes a single
+;; argument of a buffer. The return result can be any form of location accepted
+;; by `sisyphus-face-at=', including a list of match data generated, as in this
+;; case, by the `m-buffer' package.
+
+;; #+begin_src elisp
 ;;    (sisyphus-face-at=
 ;;     "(defun x ())\n(defun y ())\n(defun z ())"
 ;;     'emacs-lisp-mode
@@ -824,6 +863,11 @@ the copy of FILE will be in a different directory."
 ;;       (m-buffer-match buf "defun"))
 ;;     'font-lock-keyword-face)
 ;; #+end_src
+
+
+;; *** Implementation
+
+;; First, `sisyphus-face-at='.
 
 
 ;; #+begin_src emacs-lisp
@@ -974,7 +1018,11 @@ operates over files and takes the mode from that file."
 (put 'sisyphus-face-at=
      'ert-explainer
      'sisyphus-explain-face-at=)
+;; #+end_src
 
+;; Followed by `sisyphus-file-face-at='.
+
+;; #+begin_src emacs-lisp
 (defun sisyphus--file-face-at=-1 (file locations faces property throw-on-nil)
   (sisyphus-with-find-file
       (sisyphus-make-related-file file)
