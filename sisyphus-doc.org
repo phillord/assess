@@ -3,5 +3,6 @@
 
 #+AUTHOR: Phillip Lord
 
+#+INFOJS_OPT: view:info toc:nil
 
 #+INCLUDE: "sisyphus.org" :lines "28-"
