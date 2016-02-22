@@ -459,4 +459,11 @@ This also tests the advice on string=."
       (m-buffer-match buffer "defun"))
     'font-lock-keyword-face)))
 
+(ert-deftest sisyphus-discover-test ()
+  "Test to see if another test has been defined, which should be auto-discovered"
+  (should
+   (get 'sisyphus-discover-test-has-this-been-defined 'ert--test)))
+
+
+
 ;; #+end_src
