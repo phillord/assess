@@ -1,8 +1,8 @@
 
-#+TITLE: Testing with Sisyphus
+#+TITLE: Testing with Assess
 
 #+AUTHOR: Phillip Lord
 
 #+INFOJS_OPT: view:info toc:nil
 
-#+INCLUDE: "sisyphus.org" :lines "28-"
+#+INCLUDE: "assess.org" :lines "28-"

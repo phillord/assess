@@ -1,4 +1,4 @@
-;;; sisyphus.el --- Test support functions -*- lexical-binding: t -*-
+;;; assess.el --- Test support functions -*- lexical-binding: t -*-
 
 ;;; Header:
 
@@ -38,19 +38,19 @@
 ;;  - methods for testing indentation, by comparision or "roundtripping".
 ;;  - methods for testing fontification.
 
-;; Sisyphus aims to be a stateless as possible, leaving Emacs unchanged whether
+;; Assess aims to be a stateless as possible, leaving Emacs unchanged whether
 ;; the tests succeed or fail, with respect to buffers, open files and so on; this
 ;; helps to keep tests independent from each other. Violations of this will be
 ;; considered a bug.
 
-;; Sisyphus aims also to be as noiseless as possible, reducing and suppressing
+;; Assess aims also to be as noiseless as possible, reducing and suppressing
 ;; extraneous messages where possible, to leave a clean ert output in batch mode.
 
 
 ;;; Status:
 
-;; Sisyphus is currently a work in progress; the API is not currently stable.
-;; Even the name is somewhat is doubt. Sisyphus seemed like a good idea when I
+;; Assess is currently a work in progress; the API is not currently stable.
+;; Even the name is somewhat is doubt. Assess seemed like a good idea when I
 ;; started, but I keep spelling it wrong. I may also considering winding this
 ;; into ert-x, because then it can be used to test core.
 
@@ -70,32 +70,32 @@
 ;; ** Advice
 
 ;; Emacs-24 insists on printing out results on a single line with escaped
-;; newlines. This does not work so well with the explainer functions in sisyphus
+;; newlines. This does not work so well with the explainer functions in assess
 ;; and, probably, does not make sense anywhere. So, we advice here. The use of
 ;; nadvice.el limits this package to Emacs 24.4. Emacs 25 has this fixed.
 
 ;; #+begin_src emacs-lisp
 (when (= emacs-major-version 24)
 
-  (defun sisyphus--ert-pp-with-indentation-and-newline (orig object)
+  (defun assess--ert-pp-with-indentation-and-newline (orig object)
     (let ((pp-escape-newlines nil))
       (funcall orig object)))
 
   (advice-add
    'ert--pp-with-indentation-and-newline
    :around
-   #'sisyphus--ert-pp-with-indentation-and-newline))
+   #'assess--ert-pp-with-indentation-and-newline))
 ;; #+end_src
 
 ;; ** Deliberate Errors
 
-;; Sometimes during testing, we need to throw an "error" deliberately. Sisyphus'
+;; Sometimes during testing, we need to throw an "error" deliberately. Assess'
 ;; own test cases do this to check that state is preserved with this form of
 ;; non-local exit. Throwing `error' itself is a bit dangerous because we might
 ;; get that for other reasons; so we create a new symbol here for general use.
 
 ;; #+begin_src emacs-lisp
-(define-error 'sisyphus-deliberate-error
+(define-error 'assess-deliberate-error
   "An error deliberately caused during testing."
   'error)
 ;; #+end_src
@@ -114,33 +114,33 @@
 
 ;; "Types" are either a Emacs core type (as with buffers and strings), or an 2
 ;; element list (I haven't used cons cells in case I want to add more elements),
-;; with a keyword at the head. This allows sisyphus to distinguish between a
+;; with a keyword at the head. This allows assess to distinguish between a
 ;; simple string and a file or buffer name.
 
 ;; #+begin_src elisp
 ;; Identify "~/.emacs" as a file name
-;; (sisyphus-file "~/.emacs")
+;; (assess-file "~/.emacs")
 
 ;; Identify "*Messages*" as a buffer
-;; (sisyphus-buffer "*Messages*")
+;; (assess-buffer "*Messages*")
 ;; #+end_src
 
 ;; *** Implementation
 
 ;; #+begin_src emacs-lisp
-(defun sisyphus-to-string (x)
+(defun assess-to-string (x)
   "Turn X into a string in a type appropriate way.
 
 If X is identified as a file, returns the file contents.
 If X is identified as a buffer, returns the buffer contents.
 If X is a string, returns that.
 
-See also `sisyphus-buffer' and `sisyphus-file' which turn a
+See also `assess-buffer' and `assess-file' which turn a
 string into something that will identified appropriately."
   (pcase x
     ((pred stringp) x)
     ((pred bufferp) (m-buffer-at-string x))
-    (`(:buffer ,b) (sisyphus-to-string (get-buffer-create b)))
+    (`(:buffer ,b) (assess-to-string (get-buffer-create b)))
     (`(:file ,f)
      (with-temp-buffer
        (insert-file-contents f)
@@ -148,19 +148,19 @@ string into something that will identified appropriately."
     ;; error condition
     (_ (error "Type not recognised"))))
 
-(defun sisyphus-buffer (b)
+(defun assess-buffer (b)
   "Add type data to the string B marking it as a buffer."
   `(:buffer ,b))
 
-(defun sisyphus-file (f)
+(defun assess-file (f)
   "Add type data to the string F marking it as a file."
   `(:file ,f))
 
-(defun sisyphus-to-file-name (file)
+(defun assess-to-file-name (file)
   "Return file name for FILE.
 
 FILE can be either a string, or a plist returned by
-`sisyphus-file' or `sisyphus-make-related-file'."
+`assess-file' or `assess-make-related-file'."
   (pcase file
     ((pred stringp) file)
     (`(:file ,f) f)
@@ -170,39 +170,39 @@ FILE can be either a string, or a plist returned by
 ;; ** Entity Comparision
 
 ;; In this section, we provide support for comparing strings, buffer or file
-;; contents. The main entry point is `sisyphus=', which works like `string=' but
+;; contents. The main entry point is `assess=', which works like `string=' but
 ;; on any of the three data types, in any order.
 
 ;; #+begin_src elisp
 ;;   ;; Compare Two Strings
-;;   (sisyphus= "hello" "goodbye")
+;;   (assess= "hello" "goodbye")
 
 ;;   ;; Compare the contents of Two Buffers
-;;   (sisyphus=
-;;    (sisyphus-buffer "sisyphus.el")
-;;    (sisyphus-buffer "sisyphus-previous.el"))
+;;   (assess=
+;;    (assess-buffer "assess.el")
+;;    (assess-buffer "assess-previous.el"))
 
 ;;   ;; Compare the contents of Two files
-;;   (sisyphus=
-;;    (sisyphus-file "~/.emacs")
-;;    (sisyphus-file "~/.emacs"))
+;;   (assess=
+;;    (assess-file "~/.emacs")
+;;    (assess-file "~/.emacs"))
 
 ;;   ;; We can use core Emacs types also
-;;   (sisyphus=
-;;    (sisyphus-buffer "sisyphus.el")
-;;    (get-buffer "sisyphus-previous.el"))
+;;   (assess=
+;;    (assess-buffer "assess.el")
+;;    (get-buffer "assess-previous.el"))
 
 ;;   ;; And in any combination; here we compare a string and the contents of a
 ;;   ;; file.
-;;   (sisyphus=
+;;   (assess=
 ;;    ";; This is an empty .emacs file"
-;;    (sisyphus-file "~/.emacs"))
+;;    (assess-file "~/.emacs"))
 ;; #+end_src
 
-;; In addition, `sisyphus=' has an "explainer" function attached which produces a
-;; richer output when `sisyphus=' returns false, showing diffs of the string
+;; In addition, `assess=' has an "explainer" function attached which produces a
+;; richer output when `assess=' returns false, showing diffs of the string
 ;; comparison. Compare, for example, the results of running these two tests, one
-;; using `string=' and one using `sisyphus='.
+;; using `string=' and one using `assess='.
 
 ;; #+begin_example
 ;; F temp
@@ -213,12 +213,12 @@ FILE can be either a string, or a plist returned by
 ;;       (string= "a" "b")
 ;;       :value nil))
 
-;; F test-sisyphus=
+;; F test-assess=
 ;;     (ert-test-failed
 ;;      ((should
-;;        (sisyphus= "a" "b"))
+;;        (assess= "a" "b"))
 ;;       :form
-;;       (sisyphus= "a" "b")
+;;       (assess= "a" "b")
 ;;       :value nil :explanation "Strings:
 ;; a
 ;; and
@@ -236,15 +236,15 @@ FILE can be either a string, or a plist returned by
 ;; "))
 ;; #+end_example
 
-;; As `sisyphus=' has a compatible interface with `string=' it is also possible
+;; As `assess=' has a compatible interface with `string=' it is also possible
 ;; to add this explainer function to `string=' for use with tests which do not
-;; otherwise use sisyphus, like so:
+;; otherwise use assess, like so:
 
 ;; #+begin_src elisp
-;; (put 'string= 'ert-explainer 'sisyphus-explain=)
+;; (put 'string= 'ert-explainer 'assess-explain=)
 ;; #+end_src
 
-;; Currently, `sisyphus' uses the ~diff~ program to do the comparison if it is
+;; Currently, `assess' uses the ~diff~ program to do the comparison if it is
 ;; available, or falls back to just reporting a difference -- this could do with
 ;; improving, but it is at least no worse than the existing behaviour for string
 ;; comparison.
@@ -256,7 +256,7 @@ FILE can be either a string, or a plist returned by
 ;; as it hides what is happening from the test code.
 
 ;; #+begin_src emacs-lisp
-(defun sisyphus--write-file-silently (filename)
+(defun assess--write-file-silently (filename)
   "Write current buffer into FILENAME.
 Unlike most other ways of saving a file, this should not
 print any messages!"
@@ -271,12 +271,12 @@ print any messages!"
 ;; other tools in Emacs, so probably most people will have access to diff.
 
 ;; #+begin_src emacs-lisp
-(defun sisyphus--explainer-diff-string= (a b)
+(defun assess--explainer-diff-string= (a b)
   "Compare strings A and B using diff output.
 
 We assume that diff exists. Temporary files are left
 afterwards for cleanup by the operating system."
-  (sisyphus-with-preserved-buffer-list
+  (assess-with-preserved-buffer-list
    (let* ((diff
            (executable-find "diff"))
           (a-buffer
@@ -292,11 +292,11 @@ afterwards for cleanup by the operating system."
      (with-current-buffer
          a-buffer
        (insert a)
-       (sisyphus--write-file-silently a-file))
+       (assess--write-file-silently a-file))
      (with-current-buffer
          b-buffer
        (insert b)
-       (sisyphus--write-file-silently b-file))
+       (assess--write-file-silently b-file))
      (progn
          (format "Strings:\n%s\nand\n%s\nDiffer at:%s\n"
                  a b
@@ -313,7 +313,7 @@ afterwards for cleanup by the operating system."
                     b-file)
                    (buffer-string)))))))
 
-(defun sisyphus--explainer-simple-string= (a b)
+(defun assess--explainer-simple-string= (a b)
   "Compare strings for first difference."
   ;; We could do a bit more here.
   (format "String :%s:%s: are not equal." a b))
@@ -323,7 +323,7 @@ afterwards for cleanup by the operating system."
 ;; comparison on the contents of each entity.
 
 ;; #+begin_src emacs-lisp
-(defun sisyphus= (a b)
+(defun assess= (a b)
   "Compare A and B to see if they are the same.
 
 Equality in this sense means compare the contents in a way which
@@ -331,25 +331,25 @@ is appropriate for the type of the two arguments. So, if they are
 strings, the compare strings, if buffers, then compare the buffer
 contents and so on."
   (string=
-   (sisyphus-to-string a)
-   (sisyphus-to-string b)))
+   (assess-to-string a)
+   (assess-to-string b)))
 
-(defun sisyphus-explain= (a b)
+(defun assess-explain= (a b)
   "Compare A and B and return an explanation.
 
 This function is called by ERT as an explainer function
-automatically. See `sisyphus=' for more information."
-  (let ((a (sisyphus-to-string a))
-        (b (sisyphus-to-string b)))
+automatically. See `assess=' for more information."
+  (let ((a (assess-to-string a))
+        (b (assess-to-string b)))
     (cond
-     ((sisyphus= a b)
+     ((assess= a b)
       t)
      ((executable-find "diff")
-      (sisyphus--explainer-diff-string= a b))
+      (assess--explainer-diff-string= a b))
      (t
-      (sisyphus--explainer-simple-string= a b)))))
+      (assess--explainer-simple-string= a b)))))
 
-(put 'sisyphus= 'ert-explainer 'sisyphus-explain=)
+(put 'assess= 'ert-explainer 'assess-explain=)
 ;; #+end_src
 
 ;; ** Buffer creation
@@ -370,7 +370,7 @@ automatically. See `sisyphus=' for more information."
 ;; example, a trivial usage would be to remove buffers explicitly created.
 
 ;; #+begin_src elisp
-;;   (sisyphus-with-preserved-buffer-list
+;;   (assess-with-preserved-buffer-list
 ;;    (get-buffer-create "a")
 ;;    (get-buffer-create "b")
 ;;    (get-buffer-create "c"))
@@ -381,7 +381,7 @@ automatically. See `sisyphus=' for more information."
 ;; buffer which then gets removed again.
 
 ;; #+begin_src elisp
-;;   (sisyphus-with-preserved-buffer-list
+;;   (assess-with-preserved-buffer-list
 ;;    (describe-function 'self-insert-command))
 ;; #+end_src
 
@@ -390,41 +390,41 @@ automatically. See `sisyphus=' for more information."
 ;; different content.
 
 ;; Sometimes, it is useful to create several temporary buffers at once.
-;; `sisyphus-with-temp-buffers' provides an easy mechanism for doing this, as
+;; `assess-with-temp-buffers' provides an easy mechanism for doing this, as
 ;; well as evaluating content in these buffers. For example, this returns true
 ;; (actually three killed buffers which were live when the `mapc' form runs).
 
 ;; #+begin_src elisp
-;;   (sisyphus-with-temp-buffers
+;;   (assess-with-temp-buffers
 ;;       (a b c)
 ;;     (mapc #'buffer-live-p (list a b c)))
 ;; #+end_src
 
 ;; While this creates two buffers, puts "hellogoodbye" into one and "goodbye"
-;; into the other, then compares the contents of these buffers with `sisyphus='.
+;; into the other, then compares the contents of these buffers with `assess='.
 
 ;; #+begin_src elisp
-;;   (sisyphus-with-temp-buffers
+;;   (assess-with-temp-buffers
 ;;       ((a (insert "hello")
 ;;           (insert "goodbye"))
 ;;        (b (insert "goodbye")))
-;;     (sisyphus= a b))
+;;     (assess= a b))
 ;; #+end_src
 
-;; Finally, we provide a simple mechanism for converting any sisyphus type into a
+;; Finally, we provide a simple mechanism for converting any assess type into a
 ;; buffer. The following form, for example, returns the contents of the ~.emacs~
 ;; file.
 
 ;; #+begin_src elisp
-;;   (sisyphus-as-temp-buffer
-;;       (sisyphus-file "~/.emacs")
+;;   (assess-as-temp-buffer
+;;       (assess-file "~/.emacs")
 ;;     (buffer-string))
 ;; #+end_src
 
 ;; ** Implementation
 
 ;; #+begin_src emacs-lisp
-(defmacro sisyphus-with-preserved-buffer-list (&rest body)
+(defmacro assess-with-preserved-buffer-list (&rest body)
   "Evaluate BODY, but delete any buffers that have been created."
   (declare (debug t))
   `(let ((before-buffer-list
@@ -437,24 +437,24 @@ automatically. See `sisyphus=' for more information."
         (-difference (buffer-list)
                      before-buffer-list)))))
 
-(defun sisyphus--temp-buffer-let-form (item)
+(defun assess--temp-buffer-let-form (item)
   (if (not (listp item))
-      (sisyphus--temp-buffer-let-form
+      (assess--temp-buffer-let-form
        (list item))
     `(,(car item)
       (with-current-buffer
-          (generate-new-buffer " *sisyphus-with-temp-buffers*")
+          (generate-new-buffer " *assess-with-temp-buffers*")
         ,@(cdr item)
         (current-buffer)))))
 ;; #+end_src
 
-;; The implementation of `sisyphus-with-temp-buffers' currently uses
-;; `sisyphus-with-preserved-buffer-list' to remove buffers which means that it
+;; The implementation of `assess-with-temp-buffers' currently uses
+;; `assess-with-preserved-buffer-list' to remove buffers which means that it
 ;; will also delete any buffers created by the user; this may be a mistake, and
 ;; it might be better to delete the relevant buffers explicitly.
 
 ;; #+begin_src emacs-lisp
-(defmacro sisyphus-with-temp-buffers (varlist &rest body)
+(defmacro assess-with-temp-buffers (varlist &rest body)
   "Bind variables in varlist to temp buffers, then eval BODY.
 
 VARLIST is of the same form as a `let' binding. Each element is a
@@ -467,20 +467,20 @@ at the end of the form."
            (debug let))
   (let ((let-form
          (-map
-          #'sisyphus--temp-buffer-let-form
+          #'assess--temp-buffer-let-form
           varlist)))
-    `(sisyphus-with-preserved-buffer-list
+    `(assess-with-preserved-buffer-list
       (let ,let-form
         ,@body))))
 
-(defmacro sisyphus-as-temp-buffer (x &rest body)
+(defmacro assess-as-temp-buffer (x &rest body)
   "Insert X in a type-appropriate way into a temp buffer and eval
 BODY there.
 
-See `sisyphus-to-string' for the meaning of type-appropriate."
+See `assess-to-string' for the meaning of type-appropriate."
   (declare (indent 1) (debug t))
   `(with-temp-buffer
-     (insert (sisyphus-to-string ,x))
+     (insert (assess-to-string ,x))
      ,@body))
 ;; #+end_src
 
@@ -495,26 +495,26 @@ See `sisyphus-to-string' for the meaning of type-appropriate."
 ;; the only notable exception to this is those features which depend on the
 ;; current working directory (dir-local variables, for example).
 
-;; `sisyphus-make-related-file' provides a simple method for doing this. For
+;; `assess-make-related-file' provides a simple method for doing this. For
 ;; example, this form will return exactly the contents of ~my-test-file.el~, even
 ;; if that file is current open in the current Emacs (even if the buffer has not
 ;; been saved). Likewise, a test opening this file could be run in a batch Emacs
 ;; without interfering with an running interactive Emacs.
 
 ;; #+begin_src elisp
-;;   (sisyphus-as-temp-buffer
-;;       (sisyphus-make-related-file "dev-resources/my-test-file.el")
+;;   (assess-as-temp-buffer
+;;       (assess-make-related-file "dev-resources/my-test-file.el")
 ;;     (buffer-substring))
 ;; #+end_src
 
 ;; We also add support for opening a file, as if it where opened interactively,
 ;; with all the appropriate hooks being run, in the form of the
-;; `sisyphus-with-find-file' macro. Combined with `sisyphus-make-related-file',
+;; `assess-with-find-file' macro. Combined with `assess-make-related-file',
 ;; we can write the following expression without removing our ~.emacs~.
 
 ;; #+begin_src elisp
-;;   (sisyphus-with-find-file
-;;       (sisyphus-make-related-file "~/.emacs")
+;;   (assess-with-find-file
+;;       (assess-make-related-file "~/.emacs")
 ;;     (erase-buffer)
 ;;     (save-buffer))
 ;; #+end_src
@@ -527,7 +527,7 @@ See `sisyphus-to-string' for the meaning of type-appropriate."
 ;; interpret raw strings as a file also.
 
 ;; #+begin_src emacs-lisp
-(defun sisyphus--make-related-file-1 (file &optional directory)
+(defun assess--make-related-file-1 (file &optional directory)
   (make-temp-file
    (concat
     (or directory
@@ -537,7 +537,7 @@ See `sisyphus-to-string' for the meaning of type-appropriate."
    (concat "."
            (file-name-extension file))))
 
-(defun sisyphus-make-related-file (file &optional directory)
+(defun assess-make-related-file (file &optional directory)
   "Open a copy of FILE in DIRECTORY.
 
 FILE is copied to a temporary file in DIRECTORY or
@@ -546,14 +546,14 @@ the same file extension.
 
 This is useful for making test changes to FILE without actually
 altering it."
-  (let* ((file (sisyphus-to-file-name file))
+  (let* ((file (assess-to-file-name file))
          (related-file
-          (sisyphus--make-related-file-1 file directory)))
+          (assess--make-related-file-1 file directory)))
     (copy-file file related-file t)
-    (sisyphus-file
+    (assess-file
      related-file)))
 
-(defmacro sisyphus-with-find-file (file &rest body)
+(defmacro assess-with-find-file (file &rest body)
   "Open FILE and evaluate BODY in resultant buffer.
 
 FILE is opened with `find-file-noselect' so all the normal hooks
@@ -561,13 +561,13 @@ for file opening should occur. The buffer is killed after the
 macro exits, unless it was already open. This happens
 unconditionally, even if the buffer has changed.
 
-See also `sisyphus-make-related-file'."
+See also `assess-make-related-file'."
   (declare (debug t) (indent 1))
   (let ((temp-buffer (make-symbol "temp-buffer"))
         (file-has-buffer-p (make-symbol "file-has-buffer-p"))
         (file-s (make-symbol "file")))
     `(let* ((,file-s ,file)
-            (,file-s (sisyphus-to-file-name ,file-s))
+            (,file-s (assess-to-file-name ,file-s))
             (,file-has-buffer-p
              (find-buffer-visiting ,file-s))
             (,temp-buffer))
@@ -591,40 +591,40 @@ See also `sisyphus-make-related-file'."
 ;; There are two main ways to test indentation -- we can either take unindented
 ;; text, indent it, and then compare it to something else; or, we can roundtrip
 ;; -- take indented code, unindent it, re-indent it again and see whether we end
-;; up with what we started. Sisyphus supports both of these.
+;; up with what we started. Assess supports both of these.
 
 ;; Additionally, there are two different ways to specific a mode -- we can either
 ;; define it explicitly or, if we are opening from a file, we can use the normal
-;; `auto-mode-alist' functionality to determine the mode. Sisyphus supports both
+;; `auto-mode-alist' functionality to determine the mode. Assess supports both
 ;; of these also.
 
-;; The simplest function is `sisyphus-indentation=' which we can use as follows.
+;; The simplest function is `assess-indentation=' which we can use as follows.
 ;; In this case, we have mixed a multi-line string and a single line with
 ;; control-n characters; this is partly to show that we can, and partly to make
 ;; sure that the code works both in an `org-mode' buffer and an ~*Org Src*~ buffer.
 
 ;; #+begin_src elisp
-;;   (sisyphus-indentation=
+;;   (assess-indentation=
 ;;    'emacs-lisp-mode
-;;    "(sisyphus-with-find-file
+;;    "(assess-with-find-file
 ;;   \"~/.emacs\"
 ;;   (buffer-string))"
-;;    "(sisyphus-with-find-file\n    \"~/.emacs\"\n  (buffer-string))")
+;;    "(assess-with-find-file\n    \"~/.emacs\"\n  (buffer-string))")
 ;; #+end_src
 
 ;; #+RESULTS:
 ;; : t
 
-;; Probably more useful is `sisyphus-roundtrip-indentation=' which allows us to
+;; Probably more useful is `assess-roundtrip-indentation=' which allows us to
 ;; just specify the indented form; in this case, the string is first unindented
 ;; (every line starts at the first position) and then reindented. This saves the
 ;; effort of keeping the text in both the indented and unindent forms in sync
 ;; (but without the indentation).
 
 ;; #+begin_src elisp
-;;   (sisyphus-roundtrip-indentation=
+;;   (assess-roundtrip-indentation=
 ;;    'emacs-lisp-mode
-;;    "(sisyphus-with-find-file\n    \"~/.emacs\"\n  (buffer-string))")
+;;    "(assess-with-find-file\n    \"~/.emacs\"\n  (buffer-string))")
 ;; #+end_src
 
 ;; #+RESULTS:
@@ -633,13 +633,13 @@ See also `sisyphus-make-related-file'."
 ;; While these are useful for simple forms of indentation checking, they have
 ;; the significant problem of writing indented code inside an Emacs string. An
 ;; easier solution for longer pieces of code is to use
-;; `sisyphus-file-roundtrip-indentation='. This opens a file (safely using
-;; `sisyphus-make-related-file'), unindents, and reindents. The mode must be set
+;; `assess-file-roundtrip-indentation='. This opens a file (safely using
+;; `assess-make-related-file'), unindents, and reindents. The mode must be set
 ;; up automatically by the file type.
 
 ;; #+begin_src elisp
-;;   (sisyphus-file-roundtrip-indentation=
-;;     "sisyphus.el")
+;;   (assess-file-roundtrip-indentation=
+;;     "assess.el")
 ;; #+end_src
 
 ;; #+RESULTS:
@@ -655,7 +655,7 @@ See also `sisyphus-make-related-file'."
 ;; to have a better technique for shutting up `message'.
 
 ;; #+begin_src emacs-lisp
-(defun sisyphus--indent-buffer (&optional column)
+(defun assess--indent-buffer (&optional column)
   (cond
    (column
     (indent-region (point-min) (point-max) column))
@@ -670,119 +670,119 @@ See also `sisyphus-make-related-file'."
        (indent-according-to-mode))
      (m-buffer-match-line-start (current-buffer))))))
 
-(defun sisyphus--indent-in-mode (mode unindented)
+(defun assess--indent-in-mode (mode unindented)
   (with-temp-buffer
     (insert
-     (sisyphus-to-string unindented))
+     (assess-to-string unindented))
     (funcall mode)
-    (sisyphus--indent-buffer)
+    (assess--indent-buffer)
     (buffer-string)))
 ;; #+end_src
 
 ;; Now for the basic indentation= comparison.
 
 ;; #+begin_src emacs-lisp
-(defun sisyphus-indentation= (mode unindented indented)
+(defun assess-indentation= (mode unindented indented)
   "Return non-nil if UNINDENTED indents in MODE to INDENTED.
 Both UNINDENTED and INDENTED can be any value usable by
-`sisyphus-to-string'. Indentation is performed using
+`assess-to-string'. Indentation is performed using
 `indent-region', which MODE should set up appropriately.
 
-See also `sisyphus-file-roundtrip-indentation=' for an
+See also `assess-file-roundtrip-indentation=' for an
 alternative mechanism."
-  (sisyphus=
-   (sisyphus--indent-in-mode
+  (assess=
+   (assess--indent-in-mode
     mode
     unindented)
    indented))
 
-(defun sisyphus-explain-indentation= (mode unindented indented)
-  "Explanation function for `sisyphus-indentation='."
-  (sisyphus-explain=
-   (sisyphus--indent-in-mode
+(defun assess-explain-indentation= (mode unindented indented)
+  "Explanation function for `assess-indentation='."
+  (assess-explain=
+   (assess--indent-in-mode
     mode
     unindented)
    indented))
 
-(put 'sisyphus-indentation= 'ert-explainer 'sisyphus-explain-indentation=)
+(put 'assess-indentation= 'ert-explainer 'assess-explain-indentation=)
 ;; #+end_src
 
 ;; Roundtripping.
 
 ;; #+begin_src emacs-lisp
-(defun sisyphus--buffer-unindent (buffer)
+(defun assess--buffer-unindent (buffer)
   (with-current-buffer
       buffer
-    (sisyphus--indent-buffer 0)))
+    (assess--indent-buffer 0)))
 
-(defun sisyphus--roundtrip-1 (comp mode indented)
+(defun assess--roundtrip-1 (comp mode indented)
   (with-temp-buffer
     (funcall comp
              mode
              (progn
                (insert
-                (sisyphus-to-string indented))
-               (sisyphus--buffer-unindent (current-buffer))
+                (assess-to-string indented))
+               (assess--buffer-unindent (current-buffer))
                (buffer-string))
              indented)))
 
-(defun sisyphus-roundtrip-indentation= (mode indented)
+(defun assess-roundtrip-indentation= (mode indented)
   "Return t if in MODE, text in INDENTED is corrected indented.
 
 This is checked by unindenting the text, then reindenting it according
 to MODE.
 
-See also `sisyphus-indentation=' and
-`sisyphus-file-roundtrip-indentation=' for alternative
+See also `assess-indentation=' and
+`assess-file-roundtrip-indentation=' for alternative
 mechanisms of checking indentation."
-  (sisyphus--roundtrip-1
-   #'sisyphus-indentation=
+  (assess--roundtrip-1
+   #'assess-indentation=
    mode indented))
 
-(defun sisyphus-explain-roundtrip-indentation= (mode indented)
-  "Explanation function for `sisyphus-roundtrip-indentation='."
-  (sisyphus--roundtrip-1
-   #'sisyphus-explain-indentation=
+(defun assess-explain-roundtrip-indentation= (mode indented)
+  "Explanation function for `assess-roundtrip-indentation='."
+  (assess--roundtrip-1
+   #'assess-explain-indentation=
    mode indented))
 
-(put 'sisyphus-roundtrip-indentation=
+(put 'assess-roundtrip-indentation=
      'ert-explainer
-     'sisyphus-explain-roundtrip-indentation=)
+     'assess-explain-roundtrip-indentation=)
 ;; #+end_src
 
 ;; And file based checking.
 
 ;; #+begin_src emacs-lisp
-(defun sisyphus--file-roundtrip-1 (comp file)
+(defun assess--file-roundtrip-1 (comp file)
   (funcall
    comp
-   (sisyphus-with-find-file
-       (sisyphus-make-related-file file)
-     (sisyphus--buffer-unindent (current-buffer))
-     (sisyphus--indent-buffer)
+   (assess-with-find-file
+       (assess-make-related-file file)
+     (assess--buffer-unindent (current-buffer))
+     (assess--indent-buffer)
      (buffer-string))
    file))
 
-(defun sisyphus-file-roundtrip-indentation= (file)
+(defun assess-file-roundtrip-indentation= (file)
   "Return t if text in FILE is indented correctly.
 
-FILE is copied with `sisyphus-make-related-file', so this
+FILE is copied with `assess-make-related-file', so this
 function should be side-effect free whether or not FILE is
 already open. The file is opened with `find-file-noselect', so
 hooks associated with interactive visiting of a file should all
 be called, with the exception of directory local variables, as
 the copy of FILE will be in a different directory."
-  (sisyphus--file-roundtrip-1
-   #'sisyphus= file))
+  (assess--file-roundtrip-1
+   #'assess= file))
 
-(defun sisyphus-explain-file-roundtrip-indentation= (file)
-  "Explanation function for `sisyphus-file-roundtrip-indentation=."
-  (sisyphus--file-roundtrip-1
-   #'sisyphus-explain= file))
+(defun assess-explain-file-roundtrip-indentation= (file)
+  "Explanation function for `assess-file-roundtrip-indentation=."
+  (assess--file-roundtrip-1
+   #'assess-explain= file))
 
-(put 'sisyphus-file-roundtrip-indentation=
+(put 'assess-file-roundtrip-indentation=
      'ert-explainer
-     'sisyphus-explain-file-roundtrip-indentation=)
+     'assess-explain-file-roundtrip-indentation=)
 ;; #+end_src
 
 ;; ** Font-Lock
@@ -791,15 +791,15 @@ the copy of FILE will be in a different directory."
 ;; fontification/syntax highlighting; as with indentation, one accepts strings
 ;; but requires an explicit mode, while the other reads from file and depends on
 ;; the normal Emacs mechanisms for defining the mode. These two are
-;; `sisyphus-font-at=' and `sisyphus-file-font-at='. Both of these have the same
+;; `assess-font-at=' and `assess-file-font-at='. Both of these have the same
 ;; interface and have attached explainer functions. Here, we show examples with
-;; `sisyphus-face-at='.
+;; `assess-face-at='.
 
 ;; The simplest use is to specify a point location and a face. This returns true
 ;; if at least that face is present at the location.
 
 ;; #+begin_src elisp
-;;    (sisyphus-face-at=
+;;    (assess-face-at=
 ;;     "(defun x ())"
 ;;     'emacs-lisp-mode
 ;;     2
@@ -810,7 +810,7 @@ the copy of FILE will be in a different directory."
 ;; face. This checks that the given font is present at every location.
 
 ;; #+begin_src elisp
-;;    (sisyphus-face-at=
+;;    (assess-face-at=
 ;;     "(defun x ())
 ;; (defun y ())
 ;; (defun z ())"
@@ -823,7 +823,7 @@ the copy of FILE will be in a different directory."
 ;; checked in a pairwise manner.
 
 ;; #+begin_src elisp
-;;    (sisyphus-face-at=
+;;    (assess-face-at=
 ;;     "(defun x ())"
 ;;     'emacs-lisp-mode
 ;;     '(2 8)
@@ -836,13 +836,13 @@ the copy of FILE will be in a different directory."
 ;; second, incrementally.
 
 ;; #+begin_src elisp
-;;    (sisyphus-face-at=
+;;    (assess-face-at=
 ;;     "(defun x ())\n(defun y ())\n(defun z ())"
 ;;     'emacs-lisp-mode
 ;;     "defun"
 ;;     'font-lock-keyword-face)
 
-;;    (sisyphus-face-at=
+;;    (assess-face-at=
 ;;     "(defun x ())\n(defmacro y ())\n(defun z ())"
 ;;     'emacs-lisp-mode
 ;;     '("defun" "defmacro" "defun")
@@ -852,11 +852,11 @@ the copy of FILE will be in a different directory."
 
 ;; The locations can also be specified as a `lambda' which takes a single
 ;; argument of a buffer. The return result can be any form of location accepted
-;; by `sisyphus-face-at=', including a list of match data generated, as in this
+;; by `assess-face-at=', including a list of match data generated, as in this
 ;; case, by the `m-buffer' package.
 
 ;; #+begin_src elisp
-;;    (sisyphus-face-at=
+;;    (assess-face-at=
 ;;     "(defun x ())\n(defun y ())\n(defun z ())"
 ;;     'emacs-lisp-mode
 ;;     (lambda(buf)
@@ -867,11 +867,11 @@ the copy of FILE will be in a different directory."
 
 ;; *** Implementation
 
-;; First, `sisyphus-face-at='.
+;; First, `assess-face-at='.
 
 
 ;; #+begin_src emacs-lisp
-(defun sisyphus--face-at-location=
+(defun assess--face-at-location=
     (location face property throw-on-nil)
   ;; it's match data
   (if (listp location)
@@ -884,7 +884,7 @@ the copy of FILE will be in a different directory."
                  (marker-position (cadr location))
                  do
                  (setq all
-                       (cons (sisyphus--face-at-location=
+                       (cons (assess--face-at-location=
                               i face
                               property throw-on-nil)
                              all)))
@@ -924,7 +924,7 @@ the copy of FILE will be in a different directory."
         rtn))))
 
 
-(defun sisyphus--face-at=
+(defun assess--face-at=
     (buffer locations faces property throw-on-nil)
   (let* (
          ;; default property
@@ -965,20 +965,20 @@ the copy of FILE will be in a different directory."
                (-cycle faces)
              faces)))
     (--every?
-     (sisyphus--face-at-location=
+     (assess--face-at-location=
       (car it) (cdr it) property throw-on-nil)
      (-zip-pair locations faces))))
 
-(defun sisyphus--face-at=-1 (x mode locations faces property throw-on-nil)
+(defun assess--face-at=-1 (x mode locations faces property throw-on-nil)
   (with-temp-buffer
-    (insert (sisyphus-to-string x))
+    (insert (assess-to-string x))
     (funcall mode)
     (font-lock-fontify-buffer)
     ;; do not forget to remove this!
     (switch-to-buffer (current-buffer))
-    (sisyphus--face-at= (current-buffer) locations faces property throw-on-nil)))
+    (assess--face-at= (current-buffer) locations faces property throw-on-nil)))
 
-(defun sisyphus-face-at=
+(defun assess-face-at=
     (x mode locations faces &optional property)
   "Return non-nil if in X with MODE at MARKERS, FACES are present on PROPERTY.
 
@@ -990,7 +990,7 @@ match data, then each the beginning and end of each match are
 tested against each face.
 
 X can be a buffer, file name or string -- see
-`sisyphus-to-string' for details.
+`assess-to-string' for details.
 
 MODE is the major mode with which to fontify X -- actually, it
 will just be a function called to initialize the buffer.
@@ -1004,45 +1004,45 @@ FACES can be one or more faces.
 
 PROPERTY is the text property on which to check the faces.
 
-See also `sisyphus-to-string' for treatment of the parameter X.
+See also `assess-to-string' for treatment of the parameter X.
 
-See `sisyphus-file-face-at=' for a similar function which
+See `assess-file-face-at=' for a similar function which
 operates over files and takes the mode from that file."
-  (sisyphus--face-at=-1 x mode locations faces property nil))
+  (assess--face-at=-1 x mode locations faces property nil))
 
-(defun sisyphus-explain-face-at=
+(defun assess-explain-face-at=
     (x mode locations faces &optional property)
   (catch 'face-non-match
-    (sisyphus--face-at=-1 x mode locations faces property t)))
+    (assess--face-at=-1 x mode locations faces property t)))
 
-(put 'sisyphus-face-at=
+(put 'assess-face-at=
      'ert-explainer
-     'sisyphus-explain-face-at=)
+     'assess-explain-face-at=)
 ;; #+end_src
 
-;; Followed by `sisyphus-file-face-at='.
+;; Followed by `assess-file-face-at='.
 
 ;; #+begin_src emacs-lisp
-(defun sisyphus--file-face-at=-1 (file locations faces property throw-on-nil)
-  (sisyphus-with-find-file
-      (sisyphus-make-related-file file)
+(defun assess--file-face-at=-1 (file locations faces property throw-on-nil)
+  (assess-with-find-file
+      (assess-make-related-file file)
     (font-lock-fontify-buffer)
-    (sisyphus--face-at= (current-buffer) locations faces property throw-on-nil)))
+    (assess--face-at= (current-buffer) locations faces property throw-on-nil)))
 
-(defun sisyphus-file-face-at= (file locations faces &optional property)
-  (sisyphus--file-face-at=-1 file locations faces property nil))
+(defun assess-file-face-at= (file locations faces &optional property)
+  (assess--file-face-at=-1 file locations faces property nil))
 
-(defun sisyphus-explain-file-face-at= (file locations faces &optional property)
+(defun assess-explain-file-face-at= (file locations faces &optional property)
   (catch 'face-non-match
-    (sisyphus--file-face-at=-1 file locations faces property t)))
+    (assess--file-face-at=-1 file locations faces property t)))
 
-(put 'sisyphus-file-face-at=
+(put 'assess-file-face-at=
      'ert-explainer
-     'sisyphus-explain-file-face-at=)
+     'assess-explain-file-face-at=)
 ;; #+end_src
 
 
 ;; #+begin_src emacs-lisp
-(provide 'sisyphus)
-;;; sisyphus.el ends here
+(provide 'assess)
+;;; assess.el ends here
 ;; #+end_src

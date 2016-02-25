@@ -19,7 +19,7 @@ package:
 	EMACS-$(EMACS) cask package
 
 discover-test:
-	EMACS=$(EMACS) cask exec $(EMACS) --batch -l sisyphus.el -l sisyphus-discover.el -f sisyphus-discover-run-and-exit-batch
+	EMACS=$(EMACS) cask exec $(EMACS) --batch -l assess.el -l assess-discover.el -f assess-discover-run-and-exit-batch
 
 .PHONY: test dist
 

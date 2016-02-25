@@ -1,7 +1,7 @@
-Sisyphus
+Assess
 ========
 
-Sisyphus provides additional support for testing Emacs packages.
+Assess provides additional support for testing Emacs packages.
 
 It provides:
   - a set of predicates for comparing strings, buffers and file contents.
@@ -11,14 +11,14 @@ It provides:
   - methods for testing indentation, by comparision or "roundtripping".
   - methods for testing fontification.
 
-Sisyphus aims to be a stateless as possible, leaving Emacs unchanged whether
+Assess aims to be a stateless as possible, leaving Emacs unchanged whether
 the tests succeed or fail, with respect to buffers, open files and so on; this
 helps to keep tests independent from each other.
 
 Documentation
 -------------
 
-Sisyphus is fully documented using the `lentic-doc` documentation system.
+Assess is fully documented using the `lentic-doc` documentation system.
 
 
 Status
@@ -29,4 +29,4 @@ to change the interface, but it could happen. It is ready for careful use,
 therefore.
 
 
-[![Build Status](https://travis-ci.org/phillord/sisyphus.svg)](https://travis-ci.org/phillord/sisyphus)
+[![Build Status](https://travis-ci.org/phillord/assess.svg)](https://travis-ci.org/phillord/assess)

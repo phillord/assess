@@ -1,4 +1,4 @@
-;;; sisyphus-discover.el --- Test support functions -*- lexical-binding: t -*-
+;;; assess-discover.el --- Test support functions -*- lexical-binding: t -*-
 
 ;;; Header:
 
@@ -28,7 +28,7 @@
 
 ;;; Code:
 
-(defun sisyphus-discover-tests (directory)
+(defun assess-discover-tests (directory)
   "Discover tests in directory.
 
 Tests may confirm to one (and only one!) of several naming
@@ -63,21 +63,21 @@ tests directory."
           (concat dir-tests file))
         (directory-files dir-tests nil ".*.el"))))))
 
-(defun sisyphus-discover--load-all-tests (directory)
+(defun assess-discover--load-all-tests (directory)
   (mapc
    'load
-   (sisyphus-discover-tests directory)))
+   (assess-discover-tests directory)))
 
-(defun sisyphus-discover-load-tests ()
+(defun assess-discover-load-tests ()
   (interactive)
-  (sisyphus-discover--load-all-tests default-directory))
+  (assess-discover--load-all-tests default-directory))
 
-(defun sisyphus-discover-run-batch (&optional selector)
-  (sisyphus-discover--load-all-tests default-directory)
+(defun assess-discover-run-batch (&optional selector)
+  (assess-discover--load-all-tests default-directory)
   (ert-run-tests-batch selector))
 
-(defun sisyphus-discover-run-and-exit-batch (&optional selector)
-  (sisyphus-discover--load-all-tests default-directory)
+(defun assess-discover-run-and-exit-batch (&optional selector)
+  (assess-discover--load-all-tests default-directory)
   (ert-run-tests-batch-and-exit selector))
 
-(provide 'sisyphus-discover)
+(provide 'assess-discover)

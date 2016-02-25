@@ -1,4 +1,4 @@
-;;; sisyphus-test.el --- Tests for sisyphus.el -*- lexical-binding: t -*-
+;;; assess-test.el --- Tests for assess.el -*- lexical-binding: t -*-
 
 ;;; Header:
 
@@ -26,25 +26,25 @@
 
 ;; #+begin_src emacs-lisp
 (require 'load-relative)
-(require 'sisyphus)
+(require 'assess)
 (require 'cl-lib)
 
 ;; #+end_src
 
 ;; ** Test Extraction
 
-;; Sisyphus supports tests functions which means that we need the ability to test
+;; Assess supports tests functions which means that we need the ability to test
 ;; tests. This code simple extracts knowledge from the results of tests.
 
 ;; #+begin_src emacs-lisp
-(defun sisyphus-test--plist-from-result (result)
+(defun assess-test--plist-from-result (result)
   (cl-cdadr
    (ert-test-result-with-condition-condition result)))
 
 (ert-deftest plist-extraction ()
   (should
    (equal
-    (sisyphus-test--plist-from-result
+    (assess-test--plist-from-result
      (ert-run-test
       (make-ert-test
        :body
@@ -53,25 +53,25 @@
           (eq 1 2))))))
     '(:form (eq 1 2) :value nil))))
 
-(defun sisyphus-test--explanation-from-result (result)
+(defun assess-test--explanation-from-result (result)
   (plist-get
-   (sisyphus-test--plist-from-result result)
+   (assess-test--plist-from-result result)
    :explanation))
 
 (ert-deftest explanation-extraction-from-result ()
   "Test that explanation is extractable from failing test.
 This also tests the advice on string=."
   (should
-   (sisyphus-test--explanation-from-result
+   (assess-test--explanation-from-result
     (ert-run-test
      (make-ert-test
       :body
       (lambda ()
         (should
-         (sisyphus= "1" "2"))))))))
+         (assess= "1" "2"))))))))
 
-(defun sisyphus-test--explanation (f)
-  (sisyphus-test--explanation-from-result
+(defun assess-test--explanation (f)
+  (assess-test--explanation-from-result
    (ert-run-test
     (make-ert-test
      :body f))))
@@ -80,45 +80,45 @@ This also tests the advice on string=."
   "Test that explanation is extractable from failing test.
 This also tests the advice on string=."
   (should
-   (sisyphus-test--explanation
+   (assess-test--explanation
     (lambda ()
       (should
-       (sisyphus= "1" "2"))))))
+       (assess= "1" "2"))))))
 ;; #+end_src
 
 ;; ** To-String testing
 
 ;; #+begin_src emacs-lisp
-(defvar sisyphus-test-hello.txt
-  (sisyphus-file
+(defvar assess-test-hello.txt
+  (assess-file
    (relative-expand-file-name "../dev-resources/hello.txt")))
 
 (ert-deftest to-string ()
   (should
    (equal "hello"
-          (sisyphus-to-string "hello")))
+          (assess-to-string "hello")))
   (should
    (with-temp-buffer
      (equal "hello"
             (progn
               (insert "hello")
-              (sisyphus-to-string (current-buffer))))))
+              (assess-to-string (current-buffer))))))
   (should
    (with-temp-buffer
      (equal "hello"
             (progn
               (insert "hello")
-              (sisyphus-to-string
+              (assess-to-string
                (list
                 :buffer
                 (buffer-name (current-buffer))))))))
   (should
    (with-temp-buffer
      (equal "hello\n"
-            (sisyphus-to-string
-             sisyphus-test-hello.txt))))
+            (assess-to-string
+             assess-test-hello.txt))))
   (should-error
-   (sisyphus-to-string :hello)))
+   (assess-to-string :hello)))
 
 ;; #+end_src
 
@@ -130,22 +130,22 @@ This also tests the advice on string=."
   (with-temp-buffer
     (insert "hello")
     (should
-     (sisyphus=
+     (assess=
       (current-buffer)
       "hello")))
   (with-temp-buffer
     (insert "goodbye")
     (should-not
-     (sisyphus=
+     (assess=
       (current-buffer)
       "hello")))
   (should
-   (sisyphus-test--explanation
+   (assess-test--explanation
     (lambda ()
       (with-temp-buffer
         (insert "goodbye")
         (should
-         (sisyphus=
+         (assess=
           (current-buffer)
           "hello")))))))
 
@@ -156,29 +156,29 @@ This also tests the advice on string=."
 ;; #+begin_src emacs-lisp
 
 (ert-deftest buffer= ()
-  (sisyphus-with-temp-buffers
+  (assess-with-temp-buffers
       ((a
         (insert "hello"))
        (b
         (insert "hello")))
     (should
-     (sisyphus= a b)))
-  (sisyphus-with-temp-buffers
+     (assess= a b)))
+  (assess-with-temp-buffers
       ((a
         (insert "hello"))
        (b
         (insert "goodbye")))
     (should-not
-     (sisyphus=
+     (assess=
       a b)))
   (should
-   (sisyphus-with-temp-buffers
+   (assess-with-temp-buffers
        ((a (insert "hello"))
         (b (insert "goodbye")))
-     (sisyphus-test--explanation
+     (assess-test--explanation
       (lambda ()
         (should
-         (sisyphus=
+         (assess=
           a b)))))))
 
 ;; #+end_src
@@ -188,19 +188,19 @@ This also tests the advice on string=."
 ;; #+begin_src emacs-lisp
 (ert-deftest file-string= ()
   (should
-   (sisyphus=
-    sisyphus-test-hello.txt
+   (assess=
+    assess-test-hello.txt
     "hello\n"))
   (should-not
-   (sisyphus=
-    sisyphus-test-hello.txt
+   (assess=
+    assess-test-hello.txt
     "goodbye"))
   (should
-   (sisyphus-test--explanation
+   (assess-test--explanation
     (lambda ()
       (should
-       (sisyphus=
-        sisyphus-test-hello.txt
+       (assess=
+        assess-test-hello.txt
         "goodbye"))))))
 
 
@@ -215,7 +215,7 @@ This also tests the advice on string=."
    (=
     (length (buffer-list))
     (progn
-      (sisyphus-with-preserved-buffer-list
+      (assess-with-preserved-buffer-list
        (generate-new-buffer "preserved-buffer-list"))
       (length (buffer-list)))))
 
@@ -223,25 +223,25 @@ This also tests the advice on string=."
    (=
     (length (buffer-list))
     (condition-case e
-        (sisyphus-with-preserved-buffer-list
+        (assess-with-preserved-buffer-list
          (generate-new-buffer "preserved-buffer-list")
-         (signal 'sisyphus-deliberate-error nil))
-      (sisyphus-deliberate-error
+         (signal 'assess-deliberate-error nil))
+      (assess-deliberate-error
        (length (buffer-list)))))))
 
 (ert-deftest with-temp-buffers ()
   (should
    (bufferp
-    (sisyphus-with-temp-buffers (a) a)))
+    (assess-with-temp-buffers (a) a)))
   (should
    (bufferp
-    (sisyphus-with-temp-buffers
+    (assess-with-temp-buffers
         (a (insert "hello"))
       a)))
   (should
    (equal
     "hello"
-    (sisyphus-with-temp-buffers
+    (assess-with-temp-buffers
         ((a (insert "hello")))
       (with-current-buffer
           a
@@ -249,13 +249,13 @@ This also tests the advice on string=."
   (should
    (=
     (+ 2 (length (buffer-list)))
-    (sisyphus-with-temp-buffers (a b)
+    (assess-with-temp-buffers (a b)
       (length (buffer-list)))))
   (should
    (=
     (length (buffer-list))
     (progn
-      (sisyphus-with-temp-buffers (a b))
+      (assess-with-temp-buffers (a b))
       (length (buffer-list))))))
 
 ;; #+end_src
@@ -264,25 +264,25 @@ This also tests the advice on string=."
 
 ;; #+begin_src emacs-lisp
 
-(ert-deftest sisyphus-test-related-file ()
+(ert-deftest assess-test-related-file ()
   (should
    (file-exists-p
-    (sisyphus-to-file-name
-     (sisyphus-make-related-file sisyphus-test-hello.txt))))
+    (assess-to-file-name
+     (assess-make-related-file assess-test-hello.txt))))
   (should
-   (sisyphus=
-    sisyphus-test-hello.txt
-    (sisyphus-make-related-file sisyphus-test-hello.txt))))
+   (assess=
+    assess-test-hello.txt
+    (assess-make-related-file assess-test-hello.txt))))
 
-(ert-deftest sisyphus-test-with-find-file ()
+(ert-deftest assess-test-with-find-file ()
   (should
-   (sisyphus-with-find-file
-       (sisyphus-make-related-file sisyphus-test-hello.txt)))
+   (assess-with-find-file
+       (assess-make-related-file assess-test-hello.txt)))
   (should-not
-   (sisyphus=
-    sisyphus-test-hello.txt
-    (sisyphus-with-find-file
-        (sisyphus-make-related-file sisyphus-test-hello.txt)
+   (assess=
+    assess-test-hello.txt
+    (assess-with-find-file
+        (assess-make-related-file assess-test-hello.txt)
       (insert "hello")
       (buffer-string)))))
 
@@ -292,21 +292,21 @@ This also tests the advice on string=."
 
 ;; #+begin_src emacs-lisp
 
-(ert-deftest sisyphus--test-indent-in-mode ()
+(ert-deftest assess--test-indent-in-mode ()
   (should
-   (sisyphus=
+   (assess=
     "(
  (
   (
    (
     ))))"
-    (sisyphus--indent-in-mode
+    (assess--indent-in-mode
      'emacs-lisp-mode
      "(\n(\n(\n(\n))))"))))
 
-(ert-deftest sisyphus--test-indentation= ()
+(ert-deftest assess--test-indentation= ()
   (should
-   (sisyphus-indentation=
+   (assess-indentation=
     'emacs-lisp-mode
     "(\n(\n(\n(\n))))"
     "(
@@ -315,90 +315,90 @@ This also tests the advice on string=."
    (
     ))))"))
   (should-not
-   (sisyphus-indentation=
+   (assess-indentation=
     'emacs-lisp-mode
     "hello"
     "goodbye"))
   (should
-   (sisyphus-test--explanation
+   (assess-test--explanation
     (lambda ()
       (should
-       (sisyphus-indentation=
+       (assess-indentation=
         'emacs-lisp-mode
         "hello"
         "goodbye"))))))
 
-(defvar sisyphus-dev-resources
+(defvar assess-dev-resources
   (relative-expand-file-name "../dev-resources/"))
 
-(defvar sisyphus-dev-elisp-indented
-  (sisyphus-file
-   (concat sisyphus-dev-resources
+(defvar assess-dev-elisp-indented
+  (assess-file
+   (concat assess-dev-resources
            "elisp-indented.el")))
 
-(defvar sisyphus-dev-elisp-unindented
-  (sisyphus-file
-   (concat sisyphus-dev-resources
+(defvar assess-dev-elisp-unindented
+  (assess-file
+   (concat assess-dev-resources
            "elisp-unindented.el")))
 
-(ert-deftest sisyphus-test-roundtrip-indentation= ()
+(ert-deftest assess-test-roundtrip-indentation= ()
   (should
-   (sisyphus-roundtrip-indentation=
+   (assess-roundtrip-indentation=
     'emacs-lisp-mode
-    sisyphus-dev-elisp-indented))
+    assess-dev-elisp-indented))
   (should-not
-   (sisyphus-roundtrip-indentation=
+   (assess-roundtrip-indentation=
     'emacs-lisp-mode
-    sisyphus-dev-elisp-unindented)))
+    assess-dev-elisp-unindented)))
 
-(ert-deftest sisyphus-test-roundtrip-indentation-explain= ()
+(ert-deftest assess-test-roundtrip-indentation-explain= ()
   (should
-   (sisyphus-test--explanation
+   (assess-test--explanation
     (lambda ()
       (should
-       (sisyphus-roundtrip-indentation=
+       (assess-roundtrip-indentation=
         'emacs-lisp-mode
-        sisyphus-dev-elisp-unindented))))))
+        assess-dev-elisp-unindented))))))
 
-(ert-deftest sisyphus-test-file-roundtrip-indentation= ()
+(ert-deftest assess-test-file-roundtrip-indentation= ()
   (should
-   (sisyphus-file-roundtrip-indentation=
-    sisyphus-dev-elisp-indented))
+   (assess-file-roundtrip-indentation=
+    assess-dev-elisp-indented))
   (should-not
-   (sisyphus-file-roundtrip-indentation=
-    sisyphus-dev-elisp-unindented)))
+   (assess-file-roundtrip-indentation=
+    assess-dev-elisp-unindented)))
 
-(ert-deftest sisyphus-test-file-roundtrip-indentation-explain= ()
+(ert-deftest assess-test-file-roundtrip-indentation-explain= ()
   (should
-   (sisyphus-test--explanation
+   (assess-test--explanation
     (lambda ()
       (should
-       (sisyphus-file-roundtrip-indentation=
-        sisyphus-dev-elisp-unindented))))))
+       (assess-file-roundtrip-indentation=
+        assess-dev-elisp-unindented))))))
 
 ;; ** Face Tests
-(defvar sisyphus-dev-elisp-fontified
-  (sisyphus-file
-   (concat sisyphus-dev-resources
+(defvar assess-dev-elisp-fontified
+  (assess-file
+   (concat assess-dev-resources
            "elisp-fontified.el")))
 
-(ert-deftest sisyphus-test-face-at-simple ()
+(ert-deftest assess-test-face-at-simple ()
   (should
-   (sisyphus-face-at=
+   (assess-face-at=
     "(defun x ())"
     'emacs-lisp-mode
     2
     'font-lock-keyword-face))
   (should-not
-   (sisyphus-face-at=
+   (assess-face-at=
     "(not-defun x ())"
     'emacs-lisp-mode
     2
     'font-lock-keyword-face)))
 
-(ert-deftest sisyphus-test-face-at-multiple-positions ()
+(ert-deftest assess-test-face-at-multiple-positions ()
   (should
-   (sisyphus-face-at=
+   (assess-face-at=
     "(defun x ())
 (defun y ())
 (defun z ())"
@@ -406,7 +406,7 @@ This also tests the advice on string=."
     '(2 15 28)
     'font-lock-keyword-face))
   (should-not
-   (sisyphus-face-at=
+   (assess-face-at=
     "(defun x ())
 (defun y ())
 (not-defun z ())"
@@ -414,55 +414,55 @@ This also tests the advice on string=."
     '(2 15 28)
     'font-lock-keyword-face)))
 
-(ert-deftest sisyphus-test-face-at-multiple-faces ()
+(ert-deftest assess-test-face-at-multiple-faces ()
   (should
-   (sisyphus-face-at=
+   (assess-face-at=
     "(defun x ())"
     'emacs-lisp-mode
     '(2 8)
     '(font-lock-keyword-face font-lock-function-name-face)))
   (should-not
-   (sisyphus-face-at=
+   (assess-face-at=
     "(defun x ())"
     'emacs-lisp-mode
     '(2 10)
     '(font-lock-keyword-face font-lock-function-name-face))))
 
-(ert-deftest sisyphus-test-face-at-with-m-buffer ()
+(ert-deftest assess-test-face-at-with-m-buffer ()
   (should
-   (sisyphus-face-at=
+   (assess-face-at=
     "(defun x ())\n(defun y ())\n(defun z ())"
     'emacs-lisp-mode
     (lambda(buf)
       (m-buffer-match buf "defun"))
     'font-lock-keyword-face)))
 
-(ert-deftest sisyphus-test-face-at-with-strings ()
+(ert-deftest assess-test-face-at-with-strings ()
   (should
-   (sisyphus-face-at=
+   (assess-face-at=
     "(defun x ())\n(defun y ())\n(defun z ())"
     'emacs-lisp-mode
     "defun"
     'font-lock-keyword-face))
   (should
-   (sisyphus-face-at=
+   (assess-face-at=
     "(defun x ())\n(defmacro y ())\n(defun z ())"
     'emacs-lisp-mode
     '("defun" "defmacro" "defun")
     'font-lock-keyword-face)))
 
-(ert-deftest sisyphus-test-file-face-at ()
+(ert-deftest assess-test-file-face-at ()
   (should
-   (sisyphus-file-face-at=
-    sisyphus-dev-elisp-fontified
+   (assess-file-face-at=
+    assess-dev-elisp-fontified
     (lambda (buffer)
       (m-buffer-match buffer "defun"))
     'font-lock-keyword-face)))
 
-(ert-deftest sisyphus-discover-test ()
+(ert-deftest assess-discover-test ()
   "Test to see if another test has been defined, which should be auto-discovered"
   (should
-   (get 'sisyphus-discover-test-has-this-been-defined 'ert--test)))
+   (get 'assess-discover-test-has-this-been-defined 'ert--test)))
 
 
 
