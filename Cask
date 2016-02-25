@@ -1,9 +1,9 @@
 (source gnu)
 (source melpa)
 
-(package-file "sisyphus.el")
+(package-file "assess.el")
 
-(files "sisyphus*.el" "sisyphus-doc.org")
+(files "assess*.el" "assess-doc.org")
 
 (development
  (depends-on "ert-runner")
