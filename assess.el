@@ -49,10 +49,12 @@
 
 ;;; Status:
 
-;; Assess is currently a work in progress; the API is not currently stable.
-;; Even the name is somewhat is doubt. Assess seemed like a good idea when I
-;; started, but I keep spelling it wrong. I may also considering winding this
-;; into ert-x, because then it can be used to test core.
+;; Assess is currently a work in progress; the API is not currently stable. I
+;; may also considering winding this into ert-x, because then it can be used
+;; to test core.
+
+;; Assess used to be called sisyphus which seemed like a good idea when I
+;; started, but I kept spelling it wrong.
 
 
 ;;; Code:
