@@ -464,6 +464,12 @@ This also tests the advice on string=."
   (should
    (get 'assess-discover-test-has-this-been-defined 'ert--test)))
 
-
-
+;; https://github.com/phillord/assess/issues/4
+(ert-deftest issue-4-has-type-face ()
+  "Test that no faces are present at point."
+  (should-not
+   (assess-face-at= "foo bar" 'fundamental-mode
+                    "bar" 'font-lock-type-face))
+  (should-not
+   (assess-face-at= "def" 'python-mode "def" nil)))
 ;; #+end_src

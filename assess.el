@@ -957,7 +957,9 @@ the copy of FILE will be in a different directory."
             locations)))
           ;; make sure we have a list of faces
           (faces
-           (if (listp faces)
+           (if (and (listp faces)
+                    ;; but not nil
+                    (not (eq nil faces)))
                faces
              (list faces)))
           ;; make sure faces is as long as locations
