@@ -976,8 +976,6 @@ the copy of FILE will be in a different directory."
     (insert (assess-to-string x))
     (funcall mode)
     (font-lock-fontify-buffer)
-    ;; do not forget to remove this!
-    (switch-to-buffer (current-buffer))
     (assess--face-at= (current-buffer) locations faces property throw-on-nil)))
 
 (defun assess-face-at=
