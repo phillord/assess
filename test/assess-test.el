@@ -472,4 +472,8 @@ This also tests the advice on string=."
                     "bar" 'font-lock-type-face))
   (should-not
    (assess-face-at= "def" 'python-mode "def" nil)))
+
+;; https://github.com/phillord/assess/issues/5
+(ert-deftest issue-5-test-example ()
+  (should-not (assess-indentation= 'fundamental-mode "foo" "bar")))
 ;; #+end_src

@@ -102,6 +102,138 @@
   'error)
 ;; #+end_src
 
+;; ** Buffer creation
+
+;; For tests, it is often better to use temporary buffers, as it is much less
+;; affected by the existing state of Emacs, and much less likely to affect future
+;; state; this is particularly the case where tests are being developed as the
+;; developer may be trying to change or write test files at the same time as
+;; Emacs is trying to use them for testing.
+
+;; Emacs really only provides a single primitive `with-temp-buffer' for this
+;; situation, and that only creates a single temporary buffer at a time. Nesting
+;; of these forms sometimes works, but fails if we need to operate on two buffers
+;; at once.
+
+;; So, we provide an environment for restoring the buffer list. This allows any
+;; creation of buffers we need for testing, followed by clean up afterwards. For
+;; example, a trivial usage would be to remove buffers explicitly created.
+
+;; #+begin_src elisp
+;;   (assess-with-preserved-buffer-list
+;;    (get-buffer-create "a")
+;;    (get-buffer-create "b")
+;;    (get-buffer-create "c"))
+;; #+end_src
+
+;; Any buffer created in this scope is removed, whether this is as a direct or
+;; indirect result of the function. For example, this usage creates a ~*Help*~
+;; buffer which then gets removed again.
+
+;; #+begin_src elisp
+;;   (assess-with-preserved-buffer-list
+;;    (describe-function 'self-insert-command))
+;; #+end_src
+
+;; This does not prevent changes to existing buffers of course. If ~*Help*~ is
+;; already open before evaluation, it will remain open afterwards but with
+;; different content.
+
+;; Sometimes, it is useful to create several temporary buffers at once.
+;; `assess-with-temp-buffers' provides an easy mechanism for doing this, as
+;; well as evaluating content in these buffers. For example, this returns true
+;; (actually three killed buffers which were live when the `mapc' form runs).
+
+;; #+begin_src elisp
+;;   (assess-with-temp-buffers
+;;       (a b c)
+;;     (mapc #'buffer-live-p (list a b c)))
+;; #+end_src
+
+;; While this creates two buffers, puts "hellogoodbye" into one and "goodbye"
+;; into the other, then compares the contents of these buffers with `assess='.
+
+;; #+begin_src elisp
+;;   (assess-with-temp-buffers
+;;       ((a (insert "hello")
+;;           (insert "goodbye"))
+;;        (b (insert "goodbye")))
+;;     (assess= a b))
+;; #+end_src
+
+;; Finally, we provide a simple mechanism for converting any assess type into a
+;; buffer. The following form, for example, returns the contents of the ~.emacs~
+;; file.
+
+;; #+begin_src elisp
+;;   (assess-as-temp-buffer
+;;       (assess-file "~/.emacs")
+;;     (buffer-string))
+;; #+end_src
+
+;; ** Implementation
+
+;; #+begin_src emacs-lisp
+(defmacro assess-with-preserved-buffer-list (&rest body)
+  "Evaluate BODY, but delete any buffers that have been created."
+  (declare (debug t))
+  `(let ((before-buffer-list
+          (buffer-list)))
+     (unwind-protect
+         (progn
+           ,@body)
+       (--map
+        (kill-buffer it)
+        (-difference (buffer-list)
+                     before-buffer-list)))))
+
+(defun assess--temp-buffer-let-form (item)
+  (if (not (listp item))
+      (assess--temp-buffer-let-form
+       (list item))
+    `(,(car item)
+      (with-current-buffer
+          (generate-new-buffer " *assess-with-temp-buffers*")
+        ,@(cdr item)
+        (current-buffer)))))
+;; #+end_src
+
+;; The implementation of `assess-with-temp-buffers' currently uses
+;; `assess-with-preserved-buffer-list' to remove buffers which means that it
+;; will also delete any buffers created by the user; this may be a mistake, and
+;; it might be better to delete the relevant buffers explicitly.
+
+;; #+begin_src emacs-lisp
+(defmacro assess-with-temp-buffers (varlist &rest body)
+  "Bind variables in varlist to temp buffers, then eval BODY.
+
+VARLIST is of the same form as a `let' binding. Each element is a
+symbol or a list (symbol valueforms). Each symbol is bound to a
+buffer generated with `generate-new-buffer'. VALUEFORMS are
+evaluated with the buffer current. Any buffers created inside
+this form (and not just by this form!) are unconditionally killed
+at the end of the form."
+  (declare (indent 1)
+           (debug let))
+  (let ((let-form
+         (-map
+          #'assess--temp-buffer-let-form
+          varlist)))
+    `(assess-with-preserved-buffer-list
+      (let ,let-form
+        ,@body))))
+
+(defmacro assess-as-temp-buffer (x &rest body)
+  "Insert X in a type-appropriate way into a temp buffer and eval
+BODY there.
+
+See `assess-to-string' for the meaning of type-appropriate."
+  (declare (indent 1) (debug t))
+  `(with-temp-buffer
+     (insert (assess-to-string ,x))
+     ,@body))
+;; #+end_src
+
 ;; ** Types
 
 ;; Many tests on files or buffers actually end up being string comparision.
@@ -352,138 +484,6 @@ automatically. See `assess=' for more information."
       (assess--explainer-simple-string= a b)))))
 
 (put 'assess= 'ert-explainer 'assess-explain=)
-;; #+end_src
-
-;; ** Buffer creation
-
-;; For tests, it is often better to use temporary buffers, as it is much less
-;; affected by the existing state of Emacs, and much less likely to affect future
-;; state; this is particularly the case where tests are being developed as the
-;; developer may be trying to change or write test files at the same time as
-;; Emacs is trying to use them for testing.
-
-;; Emacs really only provides a single primitive `with-temp-buffer' for this
-;; situation, and that only creates a single temporary buffer at a time. Nesting
-;; of these forms sometimes works, but fails if we need to operate on two buffers
-;; at once.
-
-;; So, we provide an environment for restoring the buffer list. This allows any
-;; creation of buffers we need for testing, followed by clean up afterwards. For
-;; example, a trivial usage would be to remove buffers explicitly created.
-
-;; #+begin_src elisp
-;;   (assess-with-preserved-buffer-list
-;;    (get-buffer-create "a")
-;;    (get-buffer-create "b")
-;;    (get-buffer-create "c"))
-;; #+end_src
-
-;; Any buffer created in this scope is removed, whether this is as a direct or
-;; indirect result of the function. For example, this usage creates a ~*Help*~
-;; buffer which then gets removed again.
-
-;; #+begin_src elisp
-;;   (assess-with-preserved-buffer-list
-;;    (describe-function 'self-insert-command))
-;; #+end_src
-
-;; This does not prevent changes to existing buffers of course. If ~*Help*~ is
-;; already open before evaluation, it will remain open afterwards but with
-;; different content.
-
-;; Sometimes, it is useful to create several temporary buffers at once.
-;; `assess-with-temp-buffers' provides an easy mechanism for doing this, as
-;; well as evaluating content in these buffers. For example, this returns true
-;; (actually three killed buffers which were live when the `mapc' form runs).
-
-;; #+begin_src elisp
-;;   (assess-with-temp-buffers
-;;       (a b c)
-;;     (mapc #'buffer-live-p (list a b c)))
-;; #+end_src
-
-;; While this creates two buffers, puts "hellogoodbye" into one and "goodbye"
-;; into the other, then compares the contents of these buffers with `assess='.
-
-;; #+begin_src elisp
-;;   (assess-with-temp-buffers
-;;       ((a (insert "hello")
-;;           (insert "goodbye"))
-;;        (b (insert "goodbye")))
-;;     (assess= a b))
-;; #+end_src
-
-;; Finally, we provide a simple mechanism for converting any assess type into a
-;; buffer. The following form, for example, returns the contents of the ~.emacs~
-;; file.
-
-;; #+begin_src elisp
-;;   (assess-as-temp-buffer
-;;       (assess-file "~/.emacs")
-;;     (buffer-string))
-;; #+end_src
-
-;; ** Implementation
-
-;; #+begin_src emacs-lisp
-(defmacro assess-with-preserved-buffer-list (&rest body)
-  "Evaluate BODY, but delete any buffers that have been created."
-  (declare (debug t))
-  `(let ((before-buffer-list
-          (buffer-list)))
-     (unwind-protect
-         (progn
-           ,@body)
-       (--map
-        (kill-buffer it)
-        (-difference (buffer-list)
-                     before-buffer-list)))))
-
-(defun assess--temp-buffer-let-form (item)
-  (if (not (listp item))
-      (assess--temp-buffer-let-form
-       (list item))
-    `(,(car item)
-      (with-current-buffer
-          (generate-new-buffer " *assess-with-temp-buffers*")
-        ,@(cdr item)
-        (current-buffer)))))
-;; #+end_src
-
-;; The implementation of `assess-with-temp-buffers' currently uses
-;; `assess-with-preserved-buffer-list' to remove buffers which means that it
-;; will also delete any buffers created by the user; this may be a mistake, and
-;; it might be better to delete the relevant buffers explicitly.
-
-;; #+begin_src emacs-lisp
-(defmacro assess-with-temp-buffers (varlist &rest body)
-  "Bind variables in varlist to temp buffers, then eval BODY.
-
-VARLIST is of the same form as a `let' binding. Each element is a
-symbol or a list (symbol valueforms). Each symbol is bound to a
-buffer generated with `generate-new-buffer'. VALUEFORMS are
-evaluated with the buffer current. Any buffers created inside
-this form (and not just by this form!) are unconditionally killed
-at the end of the form."
-  (declare (indent 1)
-           (debug let))
-  (let ((let-form
-         (-map
-          #'assess--temp-buffer-let-form
-          varlist)))
-    `(assess-with-preserved-buffer-list
-      (let ,let-form
-        ,@body))))
-
-(defmacro assess-as-temp-buffer (x &rest body)
-  "Insert X in a type-appropriate way into a temp buffer and eval
-BODY there.
-
-See `assess-to-string' for the meaning of type-appropriate."
-  (declare (indent 1) (debug t))
-  `(with-temp-buffer
-     (insert (assess-to-string ,x))
-     ,@body))
 ;; #+end_src
 
 ;; ** Opening files
