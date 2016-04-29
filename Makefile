@@ -1,14 +1,17 @@
-EMACS ?= emacs
+EMACS = emacs
 CASK ?= cask
 
--include makefile-local
+#-include makefile-local
 
-export EMACS
+ifdef EMACS
+EMACS_ENV=EMACS=$(EMACS)
+endif
+
 
 all: install test
 
 install:
-	EMACS=$(EMACS) cask install
+	$(EMACS_ENV) cask install
 
 just-test:
 	EMACS=$(EMACS) cask exec ert-runner
