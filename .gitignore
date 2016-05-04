@@ -1,3 +1,5 @@
 /.cask
 /assess.org
 /makefile-local
+*.elc
+/dist
