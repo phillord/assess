@@ -31,7 +31,7 @@
 (defun assess-discover-tests (directory)
   "Discover tests in directory.
 
-Tests may confirm to one (and only one!) of several naming
+Tests must conform to one (and only one!) of several naming
 schemes.
 
  - End with -test.el
