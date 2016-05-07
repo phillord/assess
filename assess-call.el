@@ -32,10 +32,30 @@
 
 ;;; Code:
 
+;; ** Call Capture
+
+;; Here we provide a function for tracing calls to a particular function. This
+;; can be a direct or indirect call; parameters and return values are available
+;; for inspection afterwards. For example:
+
+;; #+begin_src elisp
+;;   (assess-call-capture
+;;     '+
+;;     (lambda()
+;;       (+ 1 1)))
+;;   ;; => (((1 1) . 2))
+;; #+end_src
+
+;; The return value is a list of cons cells, one for each invocation, of the
+;; parameters and return values.
+
+
 ;; #+begin_src emacs-lisp
-(defvar assess-call--capture-store nil)
+(defvar assess-call--capture-store nil
+  "Store for parameters captured.")
 
 (defun assess-call--capture-advice (fn &rest args)
+  "Advice for capturing args and return from a function."
   (let ((rtn (apply fn args)))
     (setq assess-call--capture-store
           (cons (cons args rtn)
@@ -43,6 +63,10 @@
     rtn))
 
 (defun assess-call-capture (sym-fn fn)
+  "Trace all calls to SYM-FN when FN is called with no args.
+
+The return value is a list of cons cells, with car being the
+parameters of the calls, and the cdr being the return value."
   (setq assess-call--capture-store nil)
   (advice-add sym-fn :around #'assess-call--capture-advice)
   (funcall fn)
