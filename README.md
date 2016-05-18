@@ -24,9 +24,25 @@ Assess is fully documented using the `lentic-doc` documentation system.
 Status
 ------
 
-It is now a 0.1 release; for those parts that already exist I do not expected
+It is now a 0.2 release; for those parts that already exist I do not expected
 to change the interface, but it could happen. It is ready for careful use,
 therefore.
 
+Roadmap
+-------
+
+I plan to move this to core Emacs, as ert-assess. This will happen after
+Emacs-25.1 release.
+
+Release
+-------
+
+## Version 0.2
+
+Add assess-call.el
+
+## Version 0.1
+
+First Release
 
 [![Build Status](https://travis-ci.org/phillord/assess.svg)](https://travis-ci.org/phillord/assess)
