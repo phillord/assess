@@ -26,6 +26,7 @@
 
 ;; #+begin_src emacs-lisp
 (require 'ert)
+(require 'assess)
 (require 'assess-call)
 
 (defun assess-call-return-car (&rest args)
@@ -65,6 +66,36 @@
        (assess-call-capture-multiply 1 2)
        (assess-call-capture-multiply 3 4))))))
 
+(defun assess-call-adviced-p (symbol)
+  "Return non-nil if SYMBOL has advice."
+  ;; eeech
+  (let ((retn nil))
+    (advice-mapc
+     (lambda (&rest _)
+       (setq retn t))
+     symbol)
+    retn))
+
+(ert-deftest assess-call-test-capture-fail ()
+  (should-not
+   (assess-call-adviced-p 'assess-call-capture-multiply))
+  (should
+   (let ((retn nil))
+     (assess-call-capture
+      'assess-call-capture-multiply
+      (lambda ()
+        (setq retn
+              (assess-call-adviced-p 'assess-call-capture-multiply))))
+     retn))
+  (should-not
+   (condition-case err
+       (assess-call-capture
+        'assess-call-capture-multiply
+        (lambda ()
+          (signal 'assess-deliberate-error nil)))
+     (assess-deliberate-error
+      (assess-call-adviced-p 'assess-call-capture-multiply)))))
+
 (defvar assess-call-test-hook nil)
 
 (ert-deftest assess-call-test-hook-test ()
@@ -92,4 +123,19 @@
        (run-hook-with-args 'assess-call-test-hook
                            'bob))))))
 
+
+(ert-deftest assess-call-test-hook-fail ()
+  ;; should be nil
+  (should (not assess-call-test-hook))
+  ;; and should be nil if we error
+  (should
+   (condition-case err
+       (assess-call-capture-hook
+        'assess-call-test-hook
+        (lambda ()
+          (signal 'assess-deliberate-error nil)))
+     (assess-deliberate-error
+      (not assess-call-test-hook)))))
+
 (provide 'assess-call-test)
+;;; assess-call-test ends here

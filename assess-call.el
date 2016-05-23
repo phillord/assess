@@ -85,10 +85,11 @@ The return value is a list of cons cells, with car being the
 parameters of the calls, and the cdr being the return value."
   (let ((capture-lambda
          (assess-call--capture-lambda)))
-    (advice-add sym-fn :around capture-lambda)
-    (funcall fn)
-    (advice-remove sym-fn capture-lambda)
-    (funcall capture-lambda :return)))
+    (unwind-protect
+        (progn (advice-add sym-fn :around capture-lambda)
+               (funcall fn)
+               (funcall capture-lambda :return))
+      (advice-remove sym-fn capture-lambda))))
 
 (defun assess-call--hook-capture-lambda ()
   "Returns a function which captures all of its args.
@@ -110,14 +111,16 @@ args."
 APPEND and LOCAL are passed to `add-hook` and documented there."
   (let ((capture-lambda
          (assess-call--hook-capture-lambda)))
-    (add-hook hook-var
-              capture-lambda
-              append local)
-    (funcall fn)
-    (remove-hook hook-var
-                 capture-lambda
-                 local)
-    (funcall capture-lambda :return)))
+    (unwind-protect
+        (progn
+          (add-hook hook-var
+                    capture-lambda
+                    append local)
+          (funcall fn)
+          (funcall capture-lambda :return))
+      (remove-hook hook-var
+                   capture-lambda
+                   local))))
 
 (provide 'assess-call)
 ;;; assess-call.el ends here
