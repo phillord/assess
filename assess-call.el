@@ -63,6 +63,12 @@
     rtn))
 
 (defun assess-call--capture-lambda ()
+  "Return function which captures args and returns of another.
+
+The returned function takes FN the function to call, and any
+number of ARGS to call the function with. In the special case,
+that FN is equal to `:return`, then all previous args and return
+values of FN are returned instead."
   (let ((capture-store nil))
     (lambda (fn &rest args)
       (if (eq fn :return)
