@@ -90,6 +90,35 @@ parameters of the calls, and the cdr being the return value."
     (advice-remove sym-fn capture-lambda)
     (funcall capture-lambda :return)))
 
+(defun assess-call--hook-capture-lambda ()
+  "Returns a function which captures all of its args.
+
+The returned function takes any number of ARGS. In the special
+case that the first arg is `:return` then it returns all previous
+args."
+  (let ((capture-store nil))
+    (lambda (&rest args)
+      (if (eq (car-safe args) :return)
+          capture-store
+        (setq capture-store
+              (cons
+               args
+               capture-store))))))
+
+(defun assess-call-capture-hook (hook-var fn &optional append local)
+  "Trace all calls to HOOK-VAR when FN is called with no args.
+APPEND and LOCAL are passed to `add-hook` and documented there."
+  (let ((capture-lambda
+         (assess-call--hook-capture-lambda)))
+    (add-hook hook-var
+              capture-lambda
+              append local)
+    (funcall fn)
+    (remove-hook hook-var
+                 capture-lambda
+                 local)
+    (funcall capture-lambda :return)))
+
 (provide 'assess-call)
 ;;; assess-call.el ends here
 ;; #+end_src

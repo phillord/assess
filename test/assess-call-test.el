@@ -65,4 +65,31 @@
        (assess-call-capture-multiply 1 2)
        (assess-call-capture-multiply 3 4))))))
 
+(defvar assess-call-test-hook nil)
+
+(ert-deftest assess-call-test-hook-test ()
+ (should
+  (equal
+   '(nil)
+   (assess-call-capture-hook
+    'assess-call-test-hook
+    (lambda ()
+      (run-hooks 'assess-call-test-hook)))))
+ (should
+  (equal
+   '(nil nil)
+   (assess-call-capture-hook
+    'assess-call-test-hook
+    (lambda ()
+      (run-hooks 'assess-call-test-hook)
+      (run-hooks 'assess-call-test-hook)))))
+  (should
+   (equal
+    '((bob))
+    (assess-call-capture-hook
+     'assess-call-test-hook
+     (lambda ()
+       (run-hook-with-args 'assess-call-test-hook
+                           'bob))))))
+
 (provide 'assess-call-test)
