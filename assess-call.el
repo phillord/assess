@@ -62,16 +62,27 @@
                 assess-call--capture-store))
     rtn))
 
+(defun assess-call--capture-lambda ()
+  (let ((capture-store nil))
+    (lambda (fn &rest args)
+      (if (eq fn :return)
+          capture-store
+        (let ((rtn (apply fn args)))
+          (setq capture-store
+                (cons (cons args rtn)
+                      capture-store)))))))
+
 (defun assess-call-capture (sym-fn fn)
   "Trace all calls to SYM-FN when FN is called with no args.
 
 The return value is a list of cons cells, with car being the
 parameters of the calls, and the cdr being the return value."
-  (setq assess-call--capture-store nil)
-  (advice-add sym-fn :around #'assess-call--capture-advice)
-  (funcall fn)
-  (advice-remove sym-fn #'siyphus-call--capture-advice)
-  assess-call--capture-store)
+  (let ((capture-lambda
+         (assess-call--capture-lambda)))
+    (advice-add sym-fn :around capture-lambda)
+    (funcall fn)
+    (advice-remove sym-fn capture-lambda)
+    (funcall capture-lambda :return)))
 
 (provide 'assess-call)
 ;;; assess-call.el ends here

@@ -52,7 +52,7 @@
      (lambda ()
        (assess-call-call-return-car 20 21 22))))))
 
-(defun call-capture-multiply (a b)
+(defun assess-call-capture-multiply (a b)
   (* a b))
 
 (ert-deftest call-capture-twice ()
@@ -60,9 +60,9 @@
    (equal
     '(((3 4) . 12) ((1 2) . 2))
     (assess-call-capture
-     'call-capture-multiply
+     'assess-call-capture-multiply
      (lambda ()
-       (call-capture-multiply 1 2)
-       (call-capture-multiply 3 4))))))
+       (assess-call-capture-multiply 1 2)
+       (assess-call-capture-multiply 3 4))))))
 
 (provide 'assess-call-test)
