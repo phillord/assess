@@ -72,10 +72,12 @@ tests directory."
   (interactive)
   (assess-discover--load-all-tests default-directory))
 
+;;;###autoload
 (defun assess-discover-run-batch (&optional selector)
   (assess-discover--load-all-tests default-directory)
   (ert-run-tests-batch selector))
 
+;;;###autoload
 (defun assess-discover-run-and-exit-batch (&optional selector)
   (assess-discover--load-all-tests default-directory)
   (ert-run-tests-batch-and-exit selector))
