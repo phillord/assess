@@ -10,7 +10,6 @@ install:
   - evm install $EVM_EMACS --use --skip
   - ls /tmp
   - find /tmp -type d 
-  - ls -lR /tmp
   - cask
   - /tmp/emacs-25-pre-travis/bin/emacs --version
 script:
