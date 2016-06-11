@@ -3,3 +3,4 @@
 /makefile-local
 *.elc
 /dist
+/assess-pkg.el
