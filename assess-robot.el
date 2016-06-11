@@ -103,9 +103,9 @@ In this case, MACRO is the \"long form\" accepted by
                         (point-max))))
     (edmacro-finish-edit)))
 
-(with-eval-after-load
+(eval-after-load
     'edmacro
-  (define-key edmacro-mode-map "C-c C-k" 'assess-robot-copy-and-finish))
+  '(define-key edmacro-mode-map (kbd "C-c C-k") 'assess-robot-copy-and-finish))
 
 (provide 'assess-robot)
 ;;; assess-robot.el ends here

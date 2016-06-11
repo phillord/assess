@@ -26,6 +26,7 @@
 
 ;;; Code:
 
+(require 'assess)
 (require 'assess-robot)
 (require 'ert)
 
@@ -54,12 +55,22 @@
     (assess-robot-with-temp-switched-buffer
       (current-buffer)))))
 
-
 (ert-deftest assess-robot-test-with-switched-buffer-string ()
   (should
    (assess=
     "hello"
     (assess-robot-with-switched-buffer-string
      (insert "hello")))))
+
+(ert-deftest assess-robot-test-execute-kmacro ()
+  (should
+   (assess=
+    "hello"
+    (assess-robot-with-switched-buffer-string
+     (assess-robot-execute-kmacro
+"
+hello			;; self-insert-command * 5
+")))))
+
 
 (provide 'assess-robot-test)

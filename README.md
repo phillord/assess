@@ -24,7 +24,7 @@ Assess is fully documented using the `lentic-doc` documentation system.
 Status
 ------
 
-It is now a 0.2 release; for those parts that already exist I do not expected
+It is now an early release; for those parts that already exist I do not expected
 to change the interface, but it could happen. It is ready for careful use,
 therefore.
 
@@ -36,6 +36,10 @@ Emacs-25.1 release.
 
 Release
 -------
+
+## Version 0.3.1
+
+Add test, fix keybinding
 
 ## Version 0.3
 
