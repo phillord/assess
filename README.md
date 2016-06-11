@@ -37,6 +37,10 @@ Emacs-25.1 release.
 Release
 -------
 
+## Version 0.3
+
+Add assess-robot.el
+
 ## Version 0.2
 
 Add assess-call.el
