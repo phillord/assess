@@ -37,6 +37,10 @@ Emacs-25.1 release.
 Release
 -------
 
+## Version 0.3.2
+
+Fix Version Number
+
 ## Version 0.3.1
 
 Add test, fix keybinding

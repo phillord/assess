@@ -6,7 +6,7 @@
 
 ;; Author: Phillip Lord <phillip.lord@russet.org.uk>
 ;; Maintainer: Phillip Lord <phillip.lord@russet.org.uk>
-;; Version: 0.3
+;; Version: 0.3.2
 ;; Package-Requires: ((emacs "24.4")(m-buffer "0.14")(dash "2.12.0"))
 
 ;; The contents of this file are subject to the GPL License, Version 3.0.
