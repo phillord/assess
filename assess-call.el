@@ -49,17 +49,6 @@
 
 
 ;; #+begin_src emacs-lisp
-(defvar assess-call--capture-store nil
-  "Store for parameters captured.")
-
-(defun assess-call--capture-advice (fn &rest args)
-  "Advice for capturing args and return from a function."
-  (let ((rtn (apply fn args)))
-    (setq assess-call--capture-store
-          (cons (cons args rtn)
-                assess-call--capture-store))
-    rtn))
-
 (defun assess-call--capture-lambda ()
   "Return function which captures args and returns of another.
 
