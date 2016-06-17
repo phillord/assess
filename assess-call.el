@@ -63,7 +63,8 @@ values of FN are returned instead."
         (let ((rtn (apply fn args)))
           (setq capture-store
                 (cons (cons args rtn)
-                      capture-store)))))))
+                      capture-store))
+          rtn)))))
 
 (defun assess-call-capture (sym-fn fn)
   "Trace all calls to SYM-FN when FN is called with no args.

@@ -137,5 +137,23 @@
      (assess-deliberate-error
       (not assess-call-test-hook)))))
 
+
+(ert-deftest assess-call-return-value ()
+  "Test that return of the instrumented form is not affected.
+
+The form that we are capturing should return the same value that
+it would were it not instrumented, which was not true with
+earlier versions of this library."
+  (should
+   (= 4
+      (let ((rtn-from-form))
+        (assess-call-capture
+         #'assess-call-capture-multiply
+         (lambda ()
+           (setq rtn-from-form
+                 (assess-call-capture-multiply 2 2))))
+        rtn-from-form))))
+
+
 (provide 'assess-call-test)
 ;;; assess-call-test ends here
