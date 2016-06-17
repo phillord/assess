@@ -220,7 +220,7 @@ at the end of the form."
           #'assess--temp-buffer-let-form
           varlist)))
     `(assess-with-preserved-buffer-list
-      (let ,let-form
+      (let* ,let-form
         ,@body))))
 
 (defmacro assess-as-temp-buffer (x &rest body)
