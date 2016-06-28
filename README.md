@@ -37,6 +37,11 @@ Emacs-25.1 release.
 Release
 -------
 
+## Version 0.4
+
+`assess-with-preserved-buffer-list' now kills even file associated buffers at
+the end of the form.
+
 ## Version 0.3.2
 
 Fix Version Number

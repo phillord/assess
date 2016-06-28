@@ -183,7 +183,9 @@
          (progn
            ,@body)
        (--map
-        (kill-buffer it)
+        (with-current-buffer it
+          (set-buffer-modified-p nil)
+          (kill-buffer))
         (-difference (buffer-list)
                      before-buffer-list)))))
 
