@@ -43,7 +43,7 @@ keyboard macros."
          (switch-to-buffer ,before-buffer)))))
 
 (defmacro assess-robot-with-temp-switched-buffer (&rest body)
-  "Evalate BODY in temporary buffer.
+  "Evaluate BODY in temporary buffer.
 
 As with `assess-robot-with-switched-buffer', `switch-to-buffer'
 is used."
