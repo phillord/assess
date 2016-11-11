@@ -9,4 +9,4 @@
 *.elc
 /dist
 /assess-pkg.el
-
+/test/assess-test.org

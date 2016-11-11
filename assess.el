@@ -590,6 +590,104 @@ See also `assess-make-related-file'."
            (kill-buffer ,temp-buffer))))))
 ;; #+end_src
 
+;; ** Creating Files and Directories
+;; I can write some documentation here if Phil wants to merge code below.
+;; *** Implementation
+;; #+BEGIN_SRC emacs-lisp
+(defun assess-with-filesystem--make-parent (spec path)
+  "If SPEC is a file name, create its parent directory rooted at PATH."
+  (save-match-data
+    (when (string-match "\\(.*\\)/" spec)
+      (make-directory (concat path "/" (match-string 1 spec)) t))))
+
+(defun assess-with-filesystem--init (spec &optional path)
+  "Interpret the SPEC inside PATH."
+  (setq path (or path "."))
+  (cond
+   ((listp spec)
+    (cond
+     ;; non-empty file
+     ((and (stringp (car spec))
+           (stringp (cadr spec)))
+      (when (string-match-p "/\\'" (car spec))
+        (error "Invalid syntax: `%s' - cannot create a directory with text content" (car spec)))
+      (assess-with-filesystem--make-parent (car spec) path)
+      (with-temp-file (concat path "/" (car spec))
+        (insert (cadr spec))))
+     ;; directory
+     ((and (stringp (car spec))
+           (consp (cadr spec)))
+      (make-directory (concat path "/" (car spec)) t)
+      (mapc (lambda (s) (assess-with-filesystem--init
+                    s (concat path "/" (car spec)))) (cadr spec)))
+     ;; recursive spec, this should probably never happen
+     (t (mapc (lambda (s) (assess-with-filesystem--init s path)) spec))))
+   ;; directory specified using a string
+   ((and (stringp spec)
+         (string-match-p "/\\'" spec))
+    (make-directory (concat path "/" spec) t))
+   ;; empty file
+   ((stringp spec)
+    (assess-with-filesystem--make-parent spec path)
+    (write-region "" nil (concat path "/" spec) nil 'no-message))
+   (t (error "Invalid syntax: `%s'" spec))))
+
+(defmacro assess-with-filesystem (spec &rest forms)
+  "Create temporary file hierarchy according to SPEC and run FORMS.
+
+SPEC is a list of specifications for file system entities which
+are to be created.
+
+File system entities are specified as follows:
+
+1. a string FILE is the name of file to be created
+  - if the string contains \"/\", parent directories are created
+    automatically
+  - if the string ends with \"/\", a directory is created
+2. a list of two elements (FILE CONTENT) specifies filename and the
+  content to put in the file
+  - the \"/\" rules apply in the same way as in 1., except you can not
+    create a directory this way
+3. a list where car is a string and cadr is a list (DIR SPEC) is a
+  recursive specification evaluated with DIR as current directory
+  - the \"/\" rules apply in the same way as in 1., except you can not
+    create a file this way, a directory is always created
+
+An example showing all the possibilities:
+
+  (\"empty_file\"
+   \"dir/empty_file\"
+   \"dir/subdir/\"
+   (\"non_empty_file\" \"content\")
+   (\"dir/anotherdir/non_empty_file\" \"tralala\")
+   (\"big_dir\" (\"empty_file\"
+              (\"non_empty_file\" \"content\")
+              \"subdir/empty_file\")))
+
+If we want to run some code in a directory with an empty file
+\"foo.txt\" present, we call:
+
+  (assess-with-filesystem '(\"foo\")
+    (code-here)
+    (and-some-more-forms))
+
+You should *not* depend on where exactly the hierarchy is created.
+By default, a new directory in `temporary-file-directory' is
+created and the specification is evaluated there, but this is up
+for change."
+  (declare (indent 1))
+  (let ((temp-root (make-symbol "temp-root"))
+        (old-dd (make-symbol "old-dd")))
+    `(let ((,temp-root (make-temp-file "temp-fs-" t))
+           (,old-dd default-directory))
+       (unwind-protect
+           (progn
+             (setq default-directory ,temp-root)
+             (mapc (lambda (s) (assess-with-filesystem--init s ".")) ,spec)
+             ,@forms)
+         (delete-directory ,temp-root t)
+         (setq default-directory ,old-dd)))))
+;; #+END_SRC
 ;; ** Indentation functions
 
 ;; There are two main ways to test indentation -- we can either take unindented
