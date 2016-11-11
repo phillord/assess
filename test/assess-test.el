@@ -288,6 +288,56 @@ This also tests the advice on string=."
 
 ;; #+end_src
 
+;; ** Creating Files and Directories
+;; #+BEGIN_SRC emacs-lisp
+(ert-deftest assess-test-create-multiple-files ()
+  (assess-with-filesystem '("foo" "bar" "baz")
+    (should (file-regular-p "foo"))
+    (should (file-regular-p "bar"))
+    (should (file-regular-p "baz"))))
+
+(ert-deftest assess-test-create-multiple-directories-and-files ()
+  (assess-with-filesystem '("foo/" "bar/" "baz")
+    (should (file-directory-p "foo"))
+    (should (file-directory-p "bar"))
+    (should (file-regular-p "baz"))))
+
+(ert-deftest assess-test-create-nested-directories ()
+  (assess-with-filesystem '("foo/bar" "foo/baz/")
+    (should (file-regular-p "foo/bar"))
+    (should (file-directory-p "foo/baz"))))
+
+(defun assess-test-file-contain-p (file content)
+  "Return nil iff FILE does not contain CONTENT."
+  (and (file-regular-p file)
+       (with-temp-buffer
+         (insert-file-contents file)
+         (string-match-p content (buffer-string)))))
+
+(ert-deftest assess-test-create-non-empty-file ()
+  (assess-with-filesystem '(("foo" "amazing content"))
+    (should (assess-test-file-contain-p "foo" "amazing content"))))
+
+(ert-deftest assess-test-create-non-empty-nested-file ()
+  (assess-with-filesystem '(("foo/bar" "amazing content"))
+    (should (assess-test-file-contain-p "foo/bar" "amazing content"))))
+
+(ert-deftest assess-test-nest-files-recursively ()
+  (assess-with-filesystem '(("foo" ("bar" "baz" "bam/"))
+                     ("a/b" ("c" "d/"))
+                     ("x" (("y" ("z"))
+                           ("content" "content")
+                           "w")))
+    (should (file-regular-p "foo/bar"))
+    (should (file-regular-p "foo/baz"))
+    (should (file-regular-p "a/b/c"))
+    (should (file-regular-p "x/y/z"))
+    (should (file-regular-p "x/content"))
+    (should (file-regular-p "x/w"))
+    (should (assess-test-file-contain-p "x/content" "content"))
+    (should (file-directory-p "foo/bam"))
+    (should (file-directory-p "a/b/d"))))
+;; #+END_SRC
 ;; ** Indentation Tests
 
 ;; #+begin_src emacs-lisp
