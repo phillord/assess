@@ -254,10 +254,10 @@ See `assess-to-string' for the meaning of type-appropriate."
 ;; simple string and a file or buffer name.
 
 ;; #+begin_src elisp
-;; Identify "~/.emacs" as a file name
+;; ;; Identify "~/.emacs" as a file name
 ;; (assess-file "~/.emacs")
 
-;; Identify "*Messages*" as a buffer
+;; ;; Identify "*Messages*" as a buffer
 ;; (assess-buffer "*Messages*")
 ;; #+end_src
 
@@ -340,7 +340,7 @@ FILE can be either a string, or a plist returned by
 ;; comparison. Compare, for example, the results of running these two tests, one
 ;; using `string=' and one using `assess='.
 
-;; #+begin_example
+;; #+BEGIN_EXAMPLE
 ;; F temp
 ;;     (ert-test-failed
 ;;      ((should
@@ -361,8 +361,8 @@ FILE can be either a string, or a plist returned by
 ;; b
 ;; Differ at:*** /tmp/a935uPW	2016-01-20 13:25:47.373076381 +0000
 ;; --- /tmp/b9357Zc	2016-01-20 13:25:47.437076381 +0000
-;; ***************
-;; *** 1 ****
+;;  ***************
+;;  *** 1 ****
 ;; ! a
 ;; \\ No newline at end of file
 ;; --- 1 ----
@@ -370,7 +370,7 @@ FILE can be either a string, or a plist returned by
 ;; \\ No newline at end of file
 
 ;; "))
-;; #+end_example
+;; #+END_EXAMPLE
 
 ;; As `assess=' has a compatible interface with `string=' it is also possible
 ;; to add this explainer function to `string=' for use with tests which do not

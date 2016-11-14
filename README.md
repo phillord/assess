@@ -18,7 +18,13 @@ helps to keep tests independent from each other.
 Documentation
 -------------
 
-Assess is fully documented using the `lentic-doc` documentation system.
+Assess is fully
+[documented](http://homepages.cs.ncl.ac.uk/phillip.lord/lentic/assess-doc.html).
+Documentation is written and generating using the `lentic-doc` documentation
+system. It is also possible to generate the documentation locally:
+
+    M-x package-install lentic-server
+    M-x lentic-server-browse
 
 
 Status

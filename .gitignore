@@ -1,7 +1,12 @@
 /.cask
 /assess.org
+/assess-call.org
+/assess-discover.org
+/assess-robot.org
+/assess-doc.html
+/assess.html
 /makefile-local
 *.elc
 /dist
 /assess-pkg.el
-/assess-call.org
+
