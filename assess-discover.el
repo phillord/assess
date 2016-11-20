@@ -26,6 +26,8 @@
 
 ;;; Code:
 
+
+;; #+begin_src emacs-lisp
 (defun assess-discover-tests (directory)
   "Discover tests in directory.
 
@@ -81,3 +83,5 @@ tests directory."
   (ert-run-tests-batch-and-exit selector))
 
 (provide 'assess-discover)
+;;; assess-discover.el ends here
+;; #+end_src
