@@ -209,14 +209,19 @@
 (defmacro assess-with-temp-buffers (varlist &rest body)
   "Bind variables in varlist to temp buffers, then eval BODY.
 
-VARLIST is of the same form as a `let' binding. Each element is a
-symbol or a list (symbol valueforms). Each symbol is bound to a
-buffer generated with `generate-new-buffer'. VALUEFORMS are
-evaluated with the buffer current. Any buffers created inside
-this form (and not just by this form!) are unconditionally killed
-at the end of the form."
+VARLIST is (nearly) of the same form as a `let' binding. Each
+element is a symbol or a list (symbol valueforms). Each symbol is
+bound to a buffer generated with `generate-new-buffer'.
+VALUEFORMS are evaluated with the buffer current. Any buffers
+created inside this form (and not just by this form!) are
+unconditionally killed at the end of the form.
+
+Unlike `let' there can be multiple valueforms which are,
+effectively, placed within an impicit `progn'."
   (declare (indent 1)
-           (debug let))
+           (debug
+            ((&rest (symbolp &rest form))
+             body)))
   (let ((let-form
          (-map
           #'assess--temp-buffer-let-form
