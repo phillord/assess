@@ -171,7 +171,7 @@
 ;;     (buffer-string))
 ;; #+end_src
 
-;; ** Implementation
+;; *** Implementation
 
 ;; #+begin_src emacs-lisp
 (defmacro assess-with-preserved-buffer-list (&rest body)
@@ -243,7 +243,7 @@ See `assess-to-string' for the meaning of type-appropriate."
 
 ;; ** Types
 
-;; Many tests on files or buffers actually end up being string comparision.
+;; Many tests on files or buffers actually end up being string comparison.
 ;; In many cases, we want to compare the *contents* of a buffer to, for example,
 ;; the *contents* of a file.
 
@@ -308,7 +308,7 @@ FILE can be either a string, or a plist returned by
     (_ (error "Type not recognised"))))
 ;; #+end_src
 
-;; ** Entity Comparision
+;; ** Entity Comparison
 
 ;; In this section, we provide support for comparing strings, buffer or file
 ;; contents. The main entry point is `assess=', which works like `string=' but
@@ -504,7 +504,7 @@ automatically. See `assess=' for more information."
 ;; the only notable exception to this is those features which depend on the
 ;; current working directory (dir-local variables, for example).
 
-;; `assess-make-related-file' provides a simple method for doing this. For
+;; ~assess-make-related-file~ provides a simple method for doing this. For
 ;; example, this form will return exactly the contents of ~my-test-file.el~, even
 ;; if that file is current open in the current Emacs (even if the buffer has not
 ;; been saved). Likewise, a test opening this file could be run in a batch Emacs
