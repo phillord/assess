@@ -537,8 +537,9 @@ This also tests the advice on string=."
    (assess-with-temp-buffers
        ((a (insert ";; Commented")
            (emacs-lisp-mode)
-           (font-lock-ensure))
+           ;; use instead of font-lock-ensure for emacs 24
+           (font-lock-fontify-buffer))
         (b (insert ";; Commented")
-           (font-lock-ensure)))
+           (font-lock-fontify-buffer)))
      (assess= a b))))
 ;; #+end_src
