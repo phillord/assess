@@ -526,4 +526,19 @@ This also tests the advice on string=."
 ;; https://github.com/phillord/assess/issues/5
 (ert-deftest issue-5-test-example ()
   (should-not (assess-indentation= 'fundamental-mode "foo" "bar")))
+
+
+(ert-deftest strings-with-unequal-properties ()
+  (should
+   (assess=
+    (propertize "hello" 'property 1)
+    "hello"))
+  (should
+   (assess-with-temp-buffers
+       ((a (insert ";; Commented")
+           (emacs-lisp-mode)
+           (font-lock-ensure))
+        (b (insert ";; Commented")
+           (font-lock-ensure)))
+     (assess= a b))))
 ;; #+end_src

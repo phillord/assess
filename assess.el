@@ -470,7 +470,9 @@ afterwards for cleanup by the operating system."
 Equality in this sense means compare the contents in a way which
 is appropriate for the type of the two arguments. So, if they are
 strings, the compare strings, if buffers, then compare the buffer
-contents and so on."
+contents and so on.
+
+Text properties in strings or buffers are ignored."
   (string=
    (assess-to-string a)
    (assess-to-string b)))
