@@ -109,4 +109,3 @@ In this case, MACRO is the \"long form\" accepted by
 
 (provide 'assess-robot)
 ;;; assess-robot.el ends here
-

@@ -7,7 +7,7 @@
 ;; Author: Phillip Lord <phillip.lord@russet.org.uk>
 ;; Maintainer: Phillip Lord <phillip.lord@russet.org.uk>
 ;; Version: 0.3.2
-;; Package-Requires: ((emacs "24.4")(m-buffer "0.14")(dash "2.12.0"))
+;; Package-Requires: ((emacs "24.1")(m-buffer "0.15"))
 
 ;; The contents of this file are subject to the GPL License, Version 3.0.
 
@@ -77,7 +77,7 @@
 ;; nadvice.el limits this package to Emacs 24.4. Emacs 25 has this fixed.
 
 ;; #+begin_src emacs-lisp
-(when (= emacs-major-version 24)
+(when (fboundp 'advice-add)
 
   (defun assess--ert-pp-with-indentation-and-newline (orig object)
     (let ((pp-escape-newlines nil))
@@ -97,9 +97,16 @@
 ;; get that for other reasons; so we create a new symbol here for general use.
 
 ;; #+begin_src emacs-lisp
-(define-error 'assess-deliberate-error
-  "An error deliberately caused during testing."
-  'error)
+(if (fboundp 'define-error)
+    (define-error 'assess-deliberate-error
+      "An error deliberately caused during testing."
+      'error)
+  (put 'assess-deliberate-error
+       'error-conditions
+       '(error))
+  (put 'assess-deliberate-error
+       'error-message
+       "A error deliberately caused during testing."))
 ;; #+end_src
 
 ;; ** Buffer creation

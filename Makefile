@@ -27,3 +27,12 @@ just-test:
 
 export:
 	export
+
+multi-test:
+	make EMACS=$(EMACSES)/master/src/emacs test
+	make EMACS=$(EMACSES)/emacs-25/src/emacs test
+	make EMACS=$(EMACSES)/emacs-25.1/src/emacs test
+	make EMACS=$(EMACSES)/emacs-24.5/src/emacs test
+	make EMACS=$(EMACSES)/emacs-24.4/src/emacs test
+	make EMACS=$(EMACSES)/emacs-24.3/src/emacs test
+	make EMACS=$(EMACSES)/emacs-24.2/src/emacs test
