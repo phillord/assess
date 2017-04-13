@@ -103,7 +103,7 @@
       'error)
   (put 'assess-deliberate-error
        'error-conditions
-       '(error))
+       '(error assess-deliberate-error))
   (put 'assess-deliberate-error
        'error-message
        "A error deliberately caused during testing."))
