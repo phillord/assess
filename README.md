@@ -30,9 +30,11 @@ system. It is also possible to generate the documentation locally:
 Status
 ------
 
-It is now an early release; for those parts that already exist I do not expected
-to change the interface, but it could happen. It is ready for careful use,
-therefore.
+The core of assess should now be considered stable and may be actively used.
+
+Assess supports runs all of the Emacs-24 series, Emacs-25 and Emacs-26 (to
+be). I will maintain support for older Emacs as far back as I am easily able
+to compile or run older versions; currently this is Emacs-24.1.
 
 Roadmap
 -------
@@ -45,8 +47,19 @@ Release
 
 ## Version 0.4
 
-`assess-with-preserved-buffer-list' now kills even file associated buffers at
-the end of the form.
+This release features the first feature added by an external contributor
+(thanks to Damien Cassou). Assess now also supports the entire Emacs-24
+series, after several requests; that this was possible was largely, if
+indirectly, due to Nicolas Petton's seq.el supporting all these versions
+
+### Features
+
+- All of Emacs-24 series now supported.
+- `assess-with-filesystem` enables creation of a temporary file hierarchy.
+
+### Bug Fixes
+ - `assess-with-preserved-buffer-list` now kills even file associated buffers
+   at the end of the form.
 
 ## Version 0.3.2
 
