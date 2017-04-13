@@ -27,8 +27,10 @@
 ;; #+begin_src emacs-lisp
 (require 'load-relative)
 (require 'assess)
-(require 'cl-lib)
-
+(unless (require 'cl-lib nil t)
+  (require 'cl)
+  (defalias 'cl-cdadr 'cdadr)
+  (defalias 'cl-loop 'loop))
 ;; #+end_src
 
 ;; ** Test Extraction
@@ -517,6 +519,13 @@ This also tests the advice on string=."
 ;; https://github.com/phillord/assess/issues/4
 (ert-deftest issue-4-has-type-face ()
   "Test that no faces are present at point."
+  :expected-result
+  ;; Emacs 24.2 just does not do this.
+  (if (and
+       (= emacs-major-version 24)
+       (or (= emacs-minor-version 2)
+           (= emacs-minor-version 1)))
+      :failed :passed)
   (should-not
    (assess-face-at= "foo bar" 'fundamental-mode
                     "bar" 'font-lock-type-face))

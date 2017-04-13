@@ -29,6 +29,15 @@
 (require 'assess)
 (require 'assess-call)
 
+(defun assess-call-no-advice ()
+  ;; Check by version number
+  (if (and
+       (= emacs-major-version 24)
+       (or (= emacs-minor-version 3)
+           (= emacs-minor-version 2)
+           (= emacs-minor-version 1)))
+      :failed :passed))
+
 (defun assess-call-return-car (&rest args)
   (car args))
 
@@ -36,6 +45,7 @@
   (apply #'assess-call-return-car args))
 
 (ert-deftest call-capture ()
+  :expected-result (assess-call-no-advice)
   (should
    (equal
     '(((10 11 12) . 10))
@@ -45,6 +55,7 @@
        (assess-call-return-car 10 11 12))))))
 
 (ert-deftest call-capture-deep ()
+  :expected-result (assess-call-no-advice)
   (should
    (equal
     '(((20 21 22) . 20))
@@ -57,6 +68,7 @@
   (* a b))
 
 (ert-deftest call-capture-twice ()
+  :expected-result (assess-call-no-advice)
   (should
    (equal
     '(((3 4) . 12) ((1 2) . 2))
@@ -77,6 +89,7 @@
     retn))
 
 (ert-deftest assess-call-test-capture-fail ()
+  :expected-result (assess-call-no-advice)
   (should-not
    (assess-call-adviced-p 'assess-call-capture-multiply))
   (should
@@ -144,6 +157,7 @@
 The form that we are capturing should return the same value that
 it would were it not instrumented, which was not true with
 earlier versions of this library."
+  :expected-result (assess-call-no-advice)
   (should
    (= 4
       (let ((rtn-from-form))
