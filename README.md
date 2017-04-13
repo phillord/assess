@@ -47,8 +47,8 @@ Release
 
 ## Version 0.4
 
-This release features the first feature added by an external contributor
-(thanks to Damien Cassou). Assess now also supports the entire Emacs-24
+This release features the first feature added by external contributors
+(thanks to @Fuco1 and @DamienCassou). Assess now also supports the entire Emacs-24
 series, after several requests; that this was possible was largely, if
 indirectly, due to Nicolas Petton's seq.el supporting all these versions
 
