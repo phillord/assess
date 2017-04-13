@@ -36,3 +36,4 @@ multi-test:
 	make EMACS=$(EMACSES)/emacs-24.4/src/emacs test
 	make EMACS=$(EMACSES)/emacs-24.3/src/emacs test
 	make EMACS=$(EMACSES)/emacs-24.2/src/emacs test
+	make EMACS=$(EMACSES)/emacs-24.1/src/emacs test
