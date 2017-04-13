@@ -66,7 +66,7 @@
 (require 'ert)
 (require 'm-buffer-at)
 (require 'm-buffer)
-(require 'dash)
+(require 'seq)
 ;; #+end_src
 
 ;; ** Advice
@@ -189,12 +189,13 @@
      (unwind-protect
          (progn
            ,@body)
-       (--map
-        (with-current-buffer it
-          (set-buffer-modified-p nil)
-          (kill-buffer))
-        (-difference (buffer-list)
-                     before-buffer-list)))))
+       (seq-map
+        (lambda (it)
+          (with-current-buffer it
+            (set-buffer-modified-p nil)
+            (kill-buffer)))
+        (seq-difference (buffer-list)
+                        before-buffer-list)))))
 
 (defun assess--temp-buffer-let-form (item)
   (if (not (listp item))
@@ -230,7 +231,7 @@ effectively, placed within an impicit `progn'."
             ((&rest (symbolp &rest form))
              body)))
   (let ((let-form
-         (-map
+         (seq-map
           #'assess--temp-buffer-let-form
           varlist)))
     `(assess-with-preserved-buffer-list
@@ -780,7 +781,7 @@ for change."
    (indent-region-function
     (funcall indent-region-function (point-min) (point-max)))
    (t
-    (-map
+    (seq-map
      (lambda (m)
        (goto-char m)
        (indent-according-to-mode))
@@ -1004,7 +1005,7 @@ the copy of FILE will be in a different directory."
                               i face
                               property throw-on-nil)
                              all)))
-        (-every? #'identity all))
+        (seq-every-p #'identity all))
     (let* ((local-faces
             (get-text-property location property))
            (rtn
@@ -1078,14 +1079,17 @@ the copy of FILE will be in a different directory."
              (list faces)))
           ;; make sure faces is as long as locations
           (faces
-           (if (> (length locations)
-                  (length faces))
-               (-cycle faces)
+           (progn
+             (while (> (length locations)
+                       (length faces))
+               ;; cycle faces if needed
+               (setq faces (append faces (seq-copy faces))))
              faces)))
-    (--every?
-     (assess--face-at-location=
-      (car it) (cdr it) property throw-on-nil)
-     (-zip-pair locations faces))))
+    (seq-every-p
+     (lambda (it)
+       (assess--face-at-location=
+        (car it) (cdr it) property throw-on-nil))
+     (seq-mapn #'cons locations faces))))
 
 (defun assess--face-at=-1 (x mode locations faces property throw-on-nil)
   (with-temp-buffer
