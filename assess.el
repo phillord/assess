@@ -242,10 +242,10 @@ effectively, placed within an impicit `progn'."
   "Insert X in a type-appropriate way into a temp buffer and eval
 BODY there.
 
-See `assess-to-string' for the meaning of type-appropriate."
+See `assess-ensure-string' for the meaning of type-appropriate."
   (declare (indent 1) (debug t))
   `(with-temp-buffer
-     (insert (assess-to-string ,x))
+     (insert (assess-ensure-string ,x))
      ,@body))
 ;; #+end_src
 
@@ -277,7 +277,7 @@ See `assess-to-string' for the meaning of type-appropriate."
 ;; *** Implementation
 
 ;; #+begin_src emacs-lisp
-(defun assess-to-string (x)
+(defun assess-ensure-string (x)
   "Turn X into a string in a type appropriate way.
 
 If X is identified as a file, returns the file contents.
@@ -286,34 +286,22 @@ If X is a string, returns that.
 
 See also `assess-buffer' and `assess-file' which turn a
 string into something that will identified appropriately."
-  (pcase x
-    ((pred stringp) x)
-    ((pred bufferp) (m-buffer-at-string x))
-    (`(:buffer ,b) (assess-to-string (get-buffer-create b)))
-    (`(:file ,f)
-     (with-temp-buffer
-       (insert-file-contents f)
-       (buffer-string)))
-    ;; error condition
-    (_ (error "Type not recognised"))))
+  (cond
+   ((stringp x) x)
+   ((bufferp x) (m-buffer-at-string x))
+   (t (error "Type not recognised"))))
 
-(defun assess-buffer (b)
-  "Add type data to the string B marking it as a buffer."
-  `(:buffer ,b))
+(defalias 'assess-buffer 'get-buffer-create
+  "Create a buffer.
+
+This is now an alias for `get-buffer-create' but used to do
+  something quite different.")
 
 (defun assess-file (f)
-  "Add type data to the string F marking it as a file."
-  `(:file ,f))
-
-(defun assess-to-file-name (file)
-  "Return file name for FILE.
-
-FILE can be either a string, or a plist returned by
-`assess-file' or `assess-make-related-file'."
-  (pcase file
-    ((pred stringp) file)
-    (`(:file ,f) f)
-    (_ (error "Type not recognised"))))
+  "TODO: Add type data to the string F marking it as a file."
+  (with-temp-buffer
+    (insert-file-contents f)
+    (buffer-string)))
 ;; #+end_src
 
 ;; ** Entity Comparison
@@ -482,16 +470,16 @@ contents and so on.
 
 Text properties in strings or buffers are ignored."
   (string=
-   (assess-to-string a)
-   (assess-to-string b)))
+   (assess-ensure-string a)
+   (assess-ensure-string b)))
 
 (defun assess-explain= (a b)
   "Compare A and B and return an explanation.
 
 This function is called by ERT as an explainer function
 automatically. See `assess=' for more information."
-  (let ((a (assess-to-string a))
-        (b (assess-to-string b)))
+  (let ((a (assess-ensure-string a))
+        (b (assess-ensure-string b)))
     (cond
      ((assess= a b)
       t)
@@ -565,12 +553,10 @@ the same file extension.
 
 This is useful for making test changes to FILE without actually
 altering it."
-  (let* ((file (assess-to-file-name file))
-         (related-file
+  (let* ((related-file
           (assess--make-related-file-1 file directory)))
     (copy-file file related-file t)
-    (assess-file
-     related-file)))
+    related-file))
 
 (defmacro assess-with-find-file (file &rest body)
   "Open FILE and evaluate BODY in resultant buffer.
@@ -583,17 +569,14 @@ unconditionally, even if the buffer has changed.
 See also `assess-make-related-file'."
   (declare (debug t) (indent 1))
   (let ((temp-buffer (make-symbol "temp-buffer"))
-        (file-has-buffer-p (make-symbol "file-has-buffer-p"))
-        (file-s (make-symbol "file")))
-    `(let* ((,file-s ,file)
-            (,file-s (assess-to-file-name ,file-s))
-            (,file-has-buffer-p
-             (find-buffer-visiting ,file-s))
+        (file-has-buffer-p (make-symbol "file-has-buffer-p")))
+    `(let* ((,file-has-buffer-p
+             (find-buffer-visiting ,file))
             (,temp-buffer))
        (unwind-protect
            (with-current-buffer
                (setq ,temp-buffer
-                     (find-file-noselect ,file-s))
+                     (find-file-noselect ,file))
              ,@body)
          (when
           ;; kill the buffer unless it was already open.
@@ -790,7 +773,7 @@ for change."
 (defun assess--indent-in-mode (mode unindented)
   (with-temp-buffer
     (insert
-     (assess-to-string unindented))
+     (assess-ensure-string unindented))
     (funcall mode)
     (assess--indent-buffer)
     (buffer-string)))
@@ -802,7 +785,7 @@ for change."
 (defun assess-indentation= (mode unindented indented)
   "Return non-nil if UNINDENTED indents in MODE to INDENTED.
 Both UNINDENTED and INDENTED can be any value usable by
-`assess-to-string'. Indentation is performed using
+`assess-ensure-string'. Indentation is performed using
 `indent-region', which MODE should set up appropriately.
 
 See also `assess-file-roundtrip-indentation=' for an
@@ -838,7 +821,7 @@ alternative mechanism."
              mode
              (progn
                (insert
-                (assess-to-string indented))
+                (assess-ensure-string indented))
                (assess--buffer-unindent (current-buffer))
                (buffer-string))
              indented)))
@@ -878,7 +861,7 @@ mechanisms of checking indentation."
      (assess--buffer-unindent (current-buffer))
      (assess--indent-buffer)
      (buffer-string))
-   file))
+   (assess-file file)))
 
 (defun assess-file-roundtrip-indentation= (file)
   "Return t if text in FILE is indented correctly.
@@ -1093,7 +1076,7 @@ the copy of FILE will be in a different directory."
 
 (defun assess--face-at=-1 (x mode locations faces property throw-on-nil)
   (with-temp-buffer
-    (insert (assess-to-string x))
+    (insert (assess-ensure-string x))
     (funcall mode)
     (font-lock-fontify-buffer)
     (assess--face-at= (current-buffer) locations faces property throw-on-nil)))
@@ -1110,7 +1093,7 @@ match data, then each the beginning and end of each match are
 tested against each face.
 
 X can be a buffer, file name or string -- see
-`assess-to-string' for details.
+`assess-ensure-string' for details.
 
 MODE is the major mode with which to fontify X -- actually, it
 will just be a function called to initialize the buffer.
@@ -1124,7 +1107,7 @@ FACES can be one or more faces.
 
 PROPERTY is the text property on which to check the faces.
 
-See also `assess-to-string' for treatment of the parameter X.
+See also `assess-ensure-string' for treatment of the parameter X.
 
 See `assess-file-face-at=' for a similar function which
 operates over files and takes the mode from that file."

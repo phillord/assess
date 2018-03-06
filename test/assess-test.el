@@ -88,39 +88,29 @@ This also tests the advice on string=."
        (assess= "1" "2"))))))
 ;; #+end_src
 
-;; ** To-String testing
+;; ** Ensure-String testing
 
 ;; #+begin_src emacs-lisp
 (defvar assess-test-hello.txt
-  (assess-file
-   (relative-expand-file-name "../dev-resources/hello.txt")))
+  (relative-expand-file-name "../dev-resources/hello.txt"))
 
-(ert-deftest to-string ()
+(ert-deftest ensure-string ()
   (should
    (equal "hello"
-          (assess-to-string "hello")))
+          (assess-ensure-string "hello")))
   (should
    (with-temp-buffer
      (equal "hello"
             (progn
               (insert "hello")
-              (assess-to-string (current-buffer))))))
-  (should
-   (with-temp-buffer
-     (equal "hello"
-            (progn
-              (insert "hello")
-              (assess-to-string
-               (list
-                :buffer
-                (buffer-name (current-buffer))))))))
+              (assess-ensure-string (current-buffer))))))
   (should
    (with-temp-buffer
      (equal "hello\n"
-            (assess-to-string
-             assess-test-hello.txt))))
+            (assess-ensure-string
+             (assess-file assess-test-hello.txt)))))
   (should-error
-   (assess-to-string :hello)))
+   (assess-ensure-string :hello)))
 
 ;; #+end_src
 
@@ -191,18 +181,20 @@ This also tests the advice on string=."
 (ert-deftest file-string= ()
   (should
    (assess=
-    assess-test-hello.txt
+    (assess-file
+     assess-test-hello.txt)
     "hello\n"))
   (should-not
    (assess=
-    assess-test-hello.txt
+    (assess-file assess-test-hello.txt)
     "goodbye"))
   (should
    (assess-test--explanation
     (lambda ()
       (should
        (assess=
-        assess-test-hello.txt
+        (assess-file
+         assess-test-hello.txt)
         "goodbye"))))))
 
 
@@ -269,12 +261,12 @@ This also tests the advice on string=."
 (ert-deftest assess-test-related-file ()
   (should
    (file-exists-p
-    (assess-to-file-name
-     (assess-make-related-file assess-test-hello.txt))))
+    (assess-make-related-file assess-test-hello.txt)))
   (should
    (assess=
-    assess-test-hello.txt
-    (assess-make-related-file assess-test-hello.txt))))
+    (assess-file assess-test-hello.txt)
+    (assess-file
+     (assess-make-related-file assess-test-hello.txt)))))
 
 (ert-deftest assess-test-with-find-file ()
   (should
@@ -384,24 +376,22 @@ This also tests the advice on string=."
   (relative-expand-file-name "../dev-resources/"))
 
 (defvar assess-dev-elisp-indented
-  (assess-file
-   (concat assess-dev-resources
-           "elisp-indented.el")))
+  (concat assess-dev-resources
+          "elisp-indented.el"))
 
 (defvar assess-dev-elisp-unindented
-  (assess-file
-   (concat assess-dev-resources
-           "elisp-unindented.el")))
+  (concat assess-dev-resources
+          "elisp-unindented.el"))
 
 (ert-deftest assess-test-roundtrip-indentation= ()
   (should
    (assess-roundtrip-indentation=
     'emacs-lisp-mode
-    assess-dev-elisp-indented))
+    (assess-file assess-dev-elisp-indented)))
   (should-not
    (assess-roundtrip-indentation=
     'emacs-lisp-mode
-    assess-dev-elisp-unindented)))
+    (assess-file assess-dev-elisp-unindented))))
 
 (ert-deftest assess-test-roundtrip-indentation-explain= ()
   (should
@@ -410,7 +400,7 @@ This also tests the advice on string=."
       (should
        (assess-roundtrip-indentation=
         'emacs-lisp-mode
-        assess-dev-elisp-unindented))))))
+        (assess-file assess-dev-elisp-unindented)))))))
 
 (ert-deftest assess-test-file-roundtrip-indentation= ()
   (should
@@ -430,9 +420,8 @@ This also tests the advice on string=."
 
 ;; ** Face Tests
 (defvar assess-dev-elisp-fontified
-  (assess-file
-   (concat assess-dev-resources
-           "elisp-fontified.el")))
+  (concat assess-dev-resources
+          "elisp-fontified.el"))
 
 (ert-deftest assess-test-face-at-simple ()
   (should
