@@ -21,7 +21,7 @@ just-test:
 	$(EMACS_ENV) $(CASK) emacs --batch -q \
 	--directory=. \
 	--load assess-discover.el \
-	--funcall assess-discover-run-and-exit-batch
+	--eval '(assess-discover-run-and-exit-batch "plist")'
 
 .PHONY: test dist
 

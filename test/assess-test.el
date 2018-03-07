@@ -44,6 +44,34 @@
    (ert-test-result-with-condition-condition result)))
 
 (ert-deftest plist-extraction ()
+  (let ((tmp
+         (assess-test--plist-from-result
+          (ert-run-test
+           (make-ert-test
+            :body
+            (lambda ()
+              (should
+               (eq 1 2))))))))
+    (should
+     (equal
+      tmp
+      '(:form (eq 1 2) :value nil)))))
+
+(ert-deftest plist-extraction-unnested ()
+  (let ((tmp
+         (assess-test--plist-from-result
+          (ert-run-test
+           (make-ert-test
+            :body
+            (lambda ()
+              (should
+               (eq 1 2))))))))
+    (should
+     (equal
+      tmp
+      '(:form (eq 1 2) :value nil)))))
+
+(ert-deftest plist-extraction-nested ()
   (should
    (equal
     (assess-test--plist-from-result
