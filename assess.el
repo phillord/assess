@@ -756,19 +756,20 @@ for change."
 
 ;; #+begin_src emacs-lisp
 (defun assess--indent-buffer (&optional column)
-  (cond
-   (column
-    (indent-region (point-min) (point-max) column))
-   ;; if indent-region-function is set, use it, and hope that it is not
-   ;; noisy.
-   (indent-region-function
-    (funcall indent-region-function (point-min) (point-max)))
-   (t
-    (seq-map
-     (lambda (m)
-       (goto-char m)
-       (indent-according-to-mode))
-     (m-buffer-match-line-start (current-buffer))))))
+  (let ((inhibit-message t))
+    (cond
+     (column
+      (indent-region (point-min) (point-max) column))
+     ;; if indent-region-function is set, use it, and hope that it is not
+     ;; noisy.
+     (indent-region-function
+      (funcall indent-region-function (point-min) (point-max)))
+     (t
+      (seq-map
+       (lambda (m)
+         (goto-char m)
+         (indent-according-to-mode))
+       (m-buffer-match-line-start (current-buffer)))))))
 
 (defun assess--indent-in-mode (mode unindented)
   (with-temp-buffer

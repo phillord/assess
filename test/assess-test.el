@@ -65,14 +65,15 @@
 (ert-deftest explanation-extraction-from-result ()
   "Test that explanation is extractable from failing test.
 This also tests the advice on string=."
-  (should
-   (assess-test--explanation-from-result
-    (ert-run-test
-     (make-ert-test
-      :body
-      (lambda ()
-        (should
-         (assess= "1" "2"))))))))
+  (let ((tmp
+         (ert-run-test
+          (make-ert-test
+           :body
+           (lambda ()
+             (should
+              (assess= "1" "2")))))))
+    (should
+     (assess-test--explanation-from-result tmp))))
 
 (defun assess-test--explanation (f)
   (assess-test--explanation-from-result
@@ -521,7 +522,8 @@ This also tests the advice on string=."
    (assess-face-at= "foo bar" 'fundamental-mode
                     "bar" 'font-lock-type-face))
   (should-not
-   (assess-face-at= "def" 'python-mode "def" nil)))
+   (let ((inhibit-message t))
+     (assess-face-at= "def" 'python-mode "def" nil))))
 
 ;; https://github.com/phillord/assess/issues/5
 (ert-deftest issue-5-test-example ()
