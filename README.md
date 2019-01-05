@@ -45,7 +45,12 @@ Emacs-25.1 release.
 Release
 -------
 
-## Version 5.0 (SNAPSHOT)
+## Version 0.5
+
+This release mostly changes internal implementation
+details. Specifically, the original use of "types" has been
+removed. Functions such as `assess-file` now return strings.
+
 
 ## Version 0.4
 
