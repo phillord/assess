@@ -33,6 +33,16 @@
   (defalias 'cl-loop 'loop))
 ;; #+end_src
 
+;; ** Always failing test
+
+;; For when I need to test my test scripts!
+
+;; #+begin_src emacs-lisp
+(ert-deftest assess-fail-for-sure ()
+  :expected-result :failed
+  (should nil))
+;; #+end_src
+
 ;; ** Test Extraction
 
 ;; Assess supports tests functions which means that we need the ability to test
