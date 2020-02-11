@@ -8,7 +8,7 @@ It provides:
   - explainer functions for all predicates giving useful output
   - macros for creating many temporary buffers at once, and for restoring the
     buffer list.
-  - methods for testing indentation, by comparision or "roundtripping".
+  - methods for testing indentation, by comparison or "roundtripping".
   - methods for testing fontification.
 
 Assess aims to be a stateless as possible, leaving Emacs unchanged whether

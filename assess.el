@@ -378,7 +378,7 @@ This is now an alias for `get-buffer-create' but used to do
 ;; *** Implementation
 
 ;; We start by writing a file silently -- this is important because the
-;; ~*Messages*~ buffer should not be affected by the machinary of a failing test,
+;; ~*Messages*~ buffer should not be affected by the machinery of a failing test,
 ;; as it hides what is happening from the test code.
 
 ;; #+begin_src emacs-lisp
