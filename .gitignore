@@ -9,5 +9,6 @@
 *.elc
 /dist
 /assess-pkg.el
+/assess-autoloads.el
 /test/assess-test.org
 /elpa-sandbox/

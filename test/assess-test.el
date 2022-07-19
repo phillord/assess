@@ -27,10 +27,8 @@
 ;; #+begin_src emacs-lisp
 (require 'load-relative)
 (require 'assess)
-(unless (require 'cl-lib nil t)
-  (require 'cl)
-  (defalias 'cl-cdadr 'cdadr)
-  (defalias 'cl-loop 'loop))
+(require 'cl-lib)
+
 ;; #+end_src
 
 ;; ** Always failing test
@@ -229,7 +227,7 @@ This also tests the advice on string=."
   (should
    (=
     (length (buffer-list))
-    (condition-case e
+    (condition-case nil
         (assess-with-preserved-buffer-list
          (generate-new-buffer "preserved-buffer-list")
          (signal 'assess-deliberate-error nil))
@@ -243,7 +241,7 @@ This also tests the advice on string=."
   (should
    (bufferp
     (assess-with-temp-buffers
-        (a (insert "hello"))
+        ((a (insert "hello")))
       a)))
   (should
    (equal
@@ -256,13 +254,13 @@ This also tests the advice on string=."
   (should
    (=
     (+ 2 (length (buffer-list)))
-    (assess-with-temp-buffers (a b)
+    (assess-with-temp-buffers (_a _b)
       (length (buffer-list)))))
   (should
    (=
     (length (buffer-list))
     (progn
-      (assess-with-temp-buffers (a b))
+      (assess-with-temp-buffers (_a _b) nil)
       (length (buffer-list))))))
 
 ;; #+end_src
@@ -390,11 +388,11 @@ This also tests the advice on string=."
 
 (defvar assess-dev-elisp-indented
   (concat assess-dev-resources
-          "elisp-indented.el"))
+          "elisp-indented.eld"))
 
 (defvar assess-dev-elisp-unindented
   (concat assess-dev-resources
-          "elisp-unindented.el"))
+          "elisp-unindented.eld"))
 
 (ert-deftest assess-test-roundtrip-indentation= ()
   (should
@@ -550,8 +548,12 @@ This also tests the advice on string=."
        ((a (insert ";; Commented")
            (emacs-lisp-mode)
            ;; use instead of font-lock-ensure for emacs 24
-           (font-lock-fontify-buffer))
+           (if (fboundp 'font-lock-ensure)
+               (font-lock-ensure)
+             (with-no-warnings (font-lock-fontify-buffer))))
         (b (insert ";; Commented")
-           (font-lock-fontify-buffer)))
+           (if (fboundp 'font-lock-ensure)
+               (font-lock-ensure)
+             (with-no-warnings (font-lock-fontify-buffer)))))
      (assess= a b))))
 ;; #+end_src

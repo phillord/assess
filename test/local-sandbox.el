@@ -1,3 +1,7 @@
+;; -*- lexical-binding: t; -*-
+
+;; FIXME: Merely loading a file should not cause such drastic changes.
+
 (setq package-user-dir
       (concat
        default-directory

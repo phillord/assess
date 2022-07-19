@@ -10,7 +10,7 @@
 
 ;; The contents of this file are subject to the GPL License, Version 3.0.
 
-;; Copyright (C) 2016, Phillip Lord
+;; Copyright (C) 2016-2022  Free Software Foundation, Inc.
 
 ;; This program is free software: you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -85,8 +85,9 @@ In this case, MACRO is the \"long form\" accepted by
      (read-kbd-macro macro))))
 
 (defun assess-robot-copy-and-finish ()
-  "Copy the macro in edmacro to the kill-ring."
+  "Copy the macro in edmacro to the `kill-ring'."
   (interactive)
+  (declare-function edmacro-finish-edit "edmacro" ())
   (save-excursion
     (goto-char (point-min))
     (search-forward "Macro:")
@@ -96,16 +97,14 @@ In this case, MACRO is the \"long form\" accepted by
             (point)
             (point-max))))
       (with-temp-buffer
-        (insert "\"")
-        (insert string)
-        (insert "\"")
+        (insert "\"" string "\"")
         (kill-ring-save (point-min)
                         (point-max))))
     (edmacro-finish-edit)))
 
-(eval-after-load
-    'edmacro
-  '(define-key edmacro-mode-map (kbd "C-c C-k") 'assess-robot-copy-and-finish))
+(with-eval-after-load 'edmacro
+  (defvar edmacro-mode-map)
+  (define-key edmacro-mode-map (kbd "C-c C-k") #'assess-robot-copy-and-finish))
 
 (provide 'assess-robot)
 ;;; assess-robot.el ends here

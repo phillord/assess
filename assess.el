@@ -11,7 +11,7 @@
 
 ;; The contents of this file are subject to the GPL License, Version 3.0.
 
-;; Copyright (C) 2015, 2016, Phillip Lord
+;; Copyright (C) 2015-2022  Free Software Foundation, Inc.
 
 ;; This program is free software: you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -77,16 +77,14 @@
 ;; nadvice.el limits this package to Emacs 24.4. Emacs 25 has this fixed.
 
 ;; #+begin_src emacs-lisp
-(when (fboundp 'advice-add)
+(defun assess--ert-pp-with-indentation-and-newline (orig object)
+  (let ((pp-escape-newlines nil))
+    (funcall orig object)))
 
-  (defun assess--ert-pp-with-indentation-and-newline (orig object)
-    (let ((pp-escape-newlines nil))
-      (funcall orig object)))
-
-  (advice-add
-   'ert--pp-with-indentation-and-newline
-   :around
-   #'assess--ert-pp-with-indentation-and-newline))
+(advice-add
+ 'ert--pp-with-indentation-and-newline
+ :around
+ #'assess--ert-pp-with-indentation-and-newline)
 ;; #+end_src
 
 ;; ** Deliberate Errors
@@ -280,7 +278,7 @@ string into something that will identified appropriately."
    ((bufferp x) (m-buffer-at-string x))
    (t (error "Type not recognised"))))
 
-(defalias 'assess-buffer 'get-buffer-create
+(defalias 'assess-buffer #'get-buffer-create
   "Create a buffer.
 
 This is now an alias for `get-buffer-create' but used to do
@@ -654,7 +652,7 @@ An example showing all the possibilities:
 If we want to run some code in a directory with an empty file
 \"foo.txt\" present, we call:
 
-  (assess-with-filesystem '(\"foo\")
+  (assess-with-filesystem \\='(\"foo\")
     (code-here)
     (and-some-more-forms))
 
@@ -1068,7 +1066,9 @@ the copy of FILE will be in a different directory."
   (with-temp-buffer
     (insert (assess-ensure-string x))
     (funcall mode)
-    (font-lock-fontify-buffer)
+    (if (fboundp 'font-lock-ensure)
+        (font-lock-ensure)
+      (with-no-warnings (font-lock-fontify-buffer)))
     (assess--face-at= (current-buffer) locations faces property throw-on-nil)))
 
 (defun assess-face-at=
@@ -1119,7 +1119,9 @@ operates over files and takes the mode from that file."
 (defun assess--file-face-at=-1 (file locations faces property throw-on-nil)
   (assess-with-find-file
       (assess-make-related-file file)
-    (font-lock-fontify-buffer)
+    (if (fboundp 'font-lock-ensure)
+        (font-lock-ensure)
+      (with-no-warnings (font-lock-fontify-buffer)))
     (assess--face-at= (current-buffer) locations faces property throw-on-nil)))
 
 (defun assess-file-face-at= (file locations faces &optional property)

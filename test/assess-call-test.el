@@ -101,7 +101,7 @@
               (assess-call-adviced-p 'assess-call-capture-multiply))))
      retn))
   (should-not
-   (condition-case err
+   (condition-case nil
        (assess-call-capture
         'assess-call-capture-multiply
         (lambda ()
@@ -142,7 +142,7 @@
   (should (not assess-call-test-hook))
   ;; and should be nil if we error
   (should
-   (condition-case err
+   (condition-case nil
        (assess-call-capture-hook
         'assess-call-test-hook
         (lambda ()

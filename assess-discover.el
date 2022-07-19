@@ -9,7 +9,7 @@
 
 ;; The contents of this file are subject to the GPL License, Version 3.0.
 
-;; Copyright (C) 2015, 2016, Phillip Lord
+;; Copyright (C) 2015-2022  Free Software Foundation, Inc.
 
 ;; This program is free software: you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -65,7 +65,7 @@ tests directory."
 
 (defun assess-discover--load-all-tests (directory)
   (mapc
-   'load
+   #'load
    (assess-discover-tests directory)))
 
 (defun assess-discover-load-tests ()
