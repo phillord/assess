@@ -81,8 +81,7 @@ In this case, MACRO is the \"long form\" accepted by
     ;; edit-kdb-macro provides no nice entry point. So, we take the nasty step
     ;; of setting the last-kbd-macro instead.
     (setq last-kbd-macro macro)
-    (execute-kbd-macro
-     (read-kbd-macro macro))))
+    (execute-kbd-macro macro)))
 
 (defun assess-robot-copy-and-finish ()
   "Copy the macro in edmacro to the `kill-ring'."

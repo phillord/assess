@@ -53,17 +53,22 @@ test-cp:
 test-git:
 	docker run -it --rm --name docker-git -v $(PWD):/usr/src/app -w /usr/src/app --entrypoint=/bin/bash  silex/emacs:$(DOCKER_TAG)-ci-cask ./test-from-git
 
-multi-test-cp:
+
+test-cp-29.1:
 	$(MAKE) test-cp DOCKER_TAG=29.1
+
+test-cp-28.2:
 	$(MAKE) test-cp DOCKER_TAG=28.2
+
+test-cp-27.2:
 	$(MAKE) test-cp DOCKER_TAG=27.2
+
+multi-test-cp: test-cp-29.1 test-cp-28.2 test-cp-27.2
 	$(MAKE) test-cp DOCKER_TAG=26.2
 	$(MAKE) test-cp DOCKER_TAG=26.1
 	$(MAKE) test-cp DOCKER_TAG=25.3
 	$(MAKE) test-cp DOCKER_TAG=25.2
 	$(MAKE) test-cp DOCKER_TAG=25.1
-	$(MAKE) test-cp DOCKER_TAG=24.5
-	$(MAKE) test-cp DOCKER_TAG=24.4
 	$(MAKE) test-cp DOCKER_TAG=master
 
 multi-test-git:
@@ -76,5 +81,3 @@ multi-test-git:
 	$(MAKE) test-git DOCKER_TAG=25.3
 	$(MAKE) test-git DOCKER_TAG=25.2
 	$(MAKE) test-git DOCKER_TAG=25.1
-	$(MAKE) test-git DOCKER_TAG=24.5
-	$(MAKE) test-git DOCKER_TAG=24.4

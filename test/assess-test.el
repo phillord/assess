@@ -415,19 +415,25 @@ This also tests the advice on string=."
 
 (ert-deftest assess-test-file-roundtrip-indentation= ()
   (should
-   (assess-file-roundtrip-indentation=
-    assess-dev-elisp-indented))
+   (let ((auto-mode-alist '((".*" . emacs-lisp-mode))))
+     (assess-file-roundtrip-indentation=
+      assess-dev-elisp-indented)))
   (should-not
-   (assess-file-roundtrip-indentation=
-    assess-dev-elisp-unindented)))
+   (let ((auto-mode-alist '((".*" . emacs-lisp-mode))))
+     (assess-file-roundtrip-indentation=
+      assess-dev-elisp-unindented))))
 
 (ert-deftest assess-test-file-roundtrip-indentation-explain= ()
+  ;; let bind auto-mode-alist because ".eld" is not associated with
+  ;; emacs-lisp-mode before Emacs-29. Putting the let binding here
+  ;; rather than in the lambda is necessary for reasons I don't quite understand
   (should
-   (assess-test--explanation
-    (lambda ()
-      (should
-       (assess-file-roundtrip-indentation=
-        assess-dev-elisp-unindented))))))
+   (let ((auto-mode-alist '((".*" . emacs-lisp-mode))))
+     (assess-test--explanation
+      (lambda ()
+        (should
+         (assess-file-roundtrip-indentation=
+          assess-dev-elisp-unindented)))))))
 
 ;; ** Face Tests
 (defvar assess-dev-elisp-fontified
