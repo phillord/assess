@@ -5,7 +5,7 @@
 # FIXME: `ox-texinfo` should use sane defaults like the file's name
 #        for TEXINFO_DIR_TITLE and the TITLE for TEXINFO_DIR_DESC?
 #+TEXINFO_DIR_CATEGORY: Emacs
-#+TEXINFO_DIR_TITLE: * asses (assess-doc).
+#+TEXINFO_DIR_TITLE: * asses: (assess-doc).
 #+TEXINFO_DIR_DESC: Testing with Assess
 
 #+INFOJS_OPT: view:info toc:nil
