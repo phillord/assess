@@ -6,12 +6,12 @@
 
 ;; Author: Phillip Lord <phillip.lord@russet.org.uk>
 ;; Maintainer: Phillip Lord <phillip.lord@russet.org.uk>
-;; Version: 0.6
+;; Version: 0.7
 ;; Package-Requires: ((emacs "24.4")(m-buffer "0.15"))
 
 ;; The contents of this file are subject to the GPL License, Version 3.0.
 
-;; Copyright (C) 2015-2022  Free Software Foundation, Inc.
+;; Copyright (C) 2015-2024  Free Software Foundation, Inc.
 
 ;; This program is free software: you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
